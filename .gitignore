@@ -1,0 +1,22 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated market data and reports
+data/raw/
+data/interim/
+data/processed/
+
+# Notebook state
+.ipynb_checkpoints/
+
+# Local overrides and secrets
+.env
+config/*.local.yaml
+
