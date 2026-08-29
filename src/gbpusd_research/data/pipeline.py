@@ -10,7 +10,11 @@ from typing import Any
 import pandas as pd
 
 from gbpusd_research.config import ProjectConfig
-from gbpusd_research.data.histdata import archive_path, read_archive_for_utc_day
+from gbpusd_research.data.histdata import (
+    archive_path,
+    read_archive,
+    read_archive_for_utc_day,
+)
 from gbpusd_research.data.resample import resample_ticks_m5
 from gbpusd_research.data.validation import validate_m5, validate_ticks
 from gbpusd_research.features.sessions import (
@@ -110,6 +114,129 @@ def build_day(project_root: Path, config: ProjectConfig, day: date) -> dict[str,
     _atomic_json(summary, quality_path)
     summary["quality_output"] = str(quality_path.relative_to(project_root))
     return summary
+
+
+def iter_months(start: date, end: date) -> list[tuple[int, int]]:
+    """Return calendar months intersecting the half-open date interval."""
+
+    if end <= start:
+        raise ValueError("Range end must be later than start")
+    months = []
+    current = date(start.year, start.month, 1)
+    while current < end:
+        months.append((current.year, current.month))
+        current = (
+            date(current.year + 1, 1, 1)
+            if current.month == 12
+            else date(current.year, current.month + 1, 1)
+        )
+    return months
+
+
+def build_month_m5(
+    project_root: Path,
+    config: ProjectConfig,
+    year: int,
+    month: int,
+    *,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Decode one source month directly to an auditable monthly M5 file."""
+
+    research = config.research
+    raw_root = resolve_within_project(project_root, research.data.paths.raw)
+    processed_root = resolve_within_project(project_root, research.data.paths.processed)
+    symbol = research.instrument.symbol
+    source = archive_path(raw_root, symbol, year, month)
+    if not source.is_file():
+        raise ValueError(
+            f"Missing HistData archive: {source.relative_to(project_root)}"
+        )
+
+    partition = Path(f"symbol={symbol}") / f"year={year:04d}"
+    m5_path = (
+        processed_root / "m5_monthly" / partition / f"m5-{year:04d}-{month:02d}.parquet"
+    )
+    quality_path = (
+        processed_root
+        / "quality_monthly"
+        / partition
+        / f"quality-{year:04d}-{month:02d}.json"
+    )
+    if m5_path.is_file() and quality_path.is_file() and not force:
+        summary = json.loads(quality_path.read_text(encoding="utf-8"))
+        summary["status"] = "cached"
+        return summary
+
+    ticks = read_archive(source, pip_size=research.instrument.pip_size)
+    ticks = (
+        ticks.sort_values("timestamp", kind="stable")
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
+    tick_quality = validate_ticks(
+        ticks, max_spread_pips=research.quality.max_spread_pips_warning
+    )
+    if not tick_quality["valid"]:
+        raise ValueError(f"Monthly tick quality validation failed: {tick_quality}")
+    bars = resample_ticks_m5(ticks)
+    m5_quality = validate_m5(bars)
+    if not m5_quality["valid"]:
+        raise ValueError(f"Monthly M5 quality validation failed: {m5_quality}")
+    _atomic_parquet(bars, m5_path)
+    summary = {
+        "status": "built",
+        "symbol": symbol,
+        "year": year,
+        "month": month,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "source_file": str(source.relative_to(project_root)),
+        "m5_output": str(m5_path.relative_to(project_root)),
+        "tick_quality": tick_quality,
+        "m5_quality": m5_quality,
+    }
+    _atomic_json(summary, quality_path)
+    summary["quality_output"] = str(quality_path.relative_to(project_root))
+    return summary
+
+
+def load_m5_range(
+    project_root: Path, config: ProjectConfig, start: date, end: date
+) -> pd.DataFrame:
+    """Load configured monthly M5 outputs and restrict them to `[start, end)`."""
+
+    processed_root = resolve_within_project(
+        project_root, config.research.data.paths.processed
+    )
+    symbol = config.research.instrument.symbol
+    frames = []
+    missing = []
+    for year, month in iter_months(start, end):
+        path = (
+            processed_root
+            / "m5_monthly"
+            / f"symbol={symbol}"
+            / f"year={year:04d}"
+            / f"m5-{year:04d}-{month:02d}.parquet"
+        )
+        if not path.is_file():
+            missing.append(str(path.relative_to(project_root)))
+        else:
+            frames.append(pd.read_parquet(path))
+    if missing:
+        raise ValueError("Missing monthly M5 file(s): " + ", ".join(missing))
+    if not frames:
+        raise ValueError("No monthly M5 data found")
+    bars = pd.concat(frames, ignore_index=True)
+    bars["timestamp"] = pd.to_datetime(bars["timestamp"], utc=True)
+    start_utc = pd.Timestamp(datetime.combine(start, datetime.min.time(), tzinfo=UTC))
+    end_utc = pd.Timestamp(datetime.combine(end, datetime.min.time(), tzinfo=UTC))
+    return (
+        bars[bars["timestamp"].ge(start_utc) & bars["timestamp"].lt(end_utc)]
+        .sort_values("timestamp", kind="stable")
+        .drop_duplicates(subset=["timestamp"], keep="last")
+        .reset_index(drop=True)
+    )
 
 
 def tag_day_sessions(

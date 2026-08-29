@@ -115,6 +115,7 @@ class ControlsConfig(StrictModel):
     exclusion_minutes_around_session_open: int = Field(ge=0)
     samples_per_event: int = Field(ge=1)
     matching: tuple[Literal["weekday", "calendar_month", "local_start_time_pool"], ...]
+    fixed_local_times: dict[str, time]
 
 
 class SessionsConfig(StrictModel):
@@ -128,6 +129,22 @@ class SessionsConfig(StrictModel):
             raise ValueError("At least one session must be configured")
         if any(not name.strip() for name in self.sessions):
             raise ValueError("Session names must not be blank")
+        unknown_controls = set(self.controls.fixed_local_times).difference(
+            self.sessions
+        )
+        if unknown_controls:
+            raise ValueError(
+                "Fixed control time references unknown session(s): "
+                + ", ".join(sorted(unknown_controls))
+            )
+        missing_controls = set(self.sessions).difference(
+            self.controls.fixed_local_times
+        )
+        if missing_controls:
+            raise ValueError(
+                "Missing fixed control time for session(s): "
+                + ", ".join(sorted(missing_controls))
+            )
         return self
 
 

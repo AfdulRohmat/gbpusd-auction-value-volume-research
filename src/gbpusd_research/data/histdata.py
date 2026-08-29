@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import zipfile
+from collections.abc import Iterator
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -185,17 +186,15 @@ def write_month_manifest(
     return destination
 
 
-def read_archive_for_utc_day(
+def iter_archive_ticks(
     path: Path,
-    day: date,
     *,
     pip_size: float,
     chunksize: int = 500_000,
-) -> pd.DataFrame:
-    """Read ticks belonging to one UTC day from a monthly HistData archive."""
+) -> Iterator[pd.DataFrame]:
+    """Yield normalized UTC tick chunks from one monthly archive."""
 
     member, _ = _validate_archive(path)
-    frames: list[pd.DataFrame] = []
     with zipfile.ZipFile(path) as archive, archive.open(member) as stream:
         chunks = pd.read_csv(
             stream,
@@ -216,28 +215,52 @@ def read_archive_for_utc_day(
                 errors="raise",
             ).dt.tz_localize(SOURCE_TIMEZONE)
             chunk.insert(0, "timestamp", local.dt.tz_convert("UTC"))
-            selected = chunk[chunk["timestamp"].dt.date == day].copy()
-            if selected.empty:
-                continue
-            selected["mid"] = (selected["bid"] + selected["ask"]) / 2
-            selected["spread_pips"] = (
-                (selected["ask"] - selected["bid"]) / pip_size
-            ).astype("float32")
-            selected["activity"] = 1
-            selected["source_archive"] = path.name
+            chunk["mid"] = (chunk["bid"] + chunk["ask"]) / 2
+            chunk["spread_pips"] = ((chunk["ask"] - chunk["bid"]) / pip_size).astype(
+                "float32"
+            )
+            chunk["activity"] = 1
+            chunk["source_archive"] = path.name
+            yield chunk[
+                [
+                    "timestamp",
+                    "bid",
+                    "ask",
+                    "mid",
+                    "spread_pips",
+                    "activity",
+                    "source_volume",
+                    "source_archive",
+                ]
+            ]
+
+
+def read_archive_for_utc_day(
+    path: Path,
+    day: date,
+    *,
+    pip_size: float,
+    chunksize: int = 500_000,
+) -> pd.DataFrame:
+    """Read ticks belonging to one UTC day from a monthly HistData archive."""
+
+    frames = []
+    for chunk in iter_archive_ticks(path, pip_size=pip_size, chunksize=chunksize):
+        selected = chunk[chunk["timestamp"].dt.date == day].copy()
+        if not selected.empty:
             frames.append(selected)
 
     if not frames:
         return pd.DataFrame()
-    return pd.concat(frames, ignore_index=True)[
-        [
-            "timestamp",
-            "bid",
-            "ask",
-            "mid",
-            "spread_pips",
-            "activity",
-            "source_volume",
-            "source_archive",
-        ]
-    ]
+    return pd.concat(frames, ignore_index=True)
+
+
+def read_archive(
+    path: Path, *, pip_size: float, chunksize: int = 500_000
+) -> pd.DataFrame:
+    """Read a complete monthly archive into canonical UTC tick rows."""
+
+    frames = list(iter_archive_ticks(path, pip_size=pip_size, chunksize=chunksize))
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)

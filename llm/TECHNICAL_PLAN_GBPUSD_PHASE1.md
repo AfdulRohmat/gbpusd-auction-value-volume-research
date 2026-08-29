@@ -1,7 +1,8 @@
 # Technical Plan — GBPUSD Session Research Phase 1
 
-**Status:** Draft for review  
+**Status:** 2024 accepted as development sample; independent validation pending
 **Source PRD:** `llm/PRD_GBPUSD_Session_Value_Fundamental_Research.md`  
+**Run review:** `llm/PHASE1_RESULTS_2023_2024.md`
 **Scope:** Repository foundation, market-data pipeline, session tagging, and opening event study  
 **Explicitly excluded:** VWAP/Volume Profile signals, fundamental scoring, trade simulation, and optimization
 
@@ -68,9 +69,12 @@ preserve the V1 zero-cost requirement and still provide millisecond bid/ask
 quotes for 2023–2024.
 - Initial smoke-test period: January 2024.
 - Initial download cap: `2023-01-01` inclusive to `2025-01-01` exclusive.
-- Development period after smoke test: calendar year 2023.
-- Validation period: calendar year 2024.
-- No separate final holdout is claimed inside this initial two-year dataset.
+- Revised development period: calendar year 2024.
+- Calendar year 2023 is excluded because its tick feed has systematic missing
+  hourly blocks and only 55% eligible New York openings.
+- Validation period is not yet assigned. A later year must be evaluated without
+  changing the frozen Phase-1 endpoint and control definitions.
+- No final holdout is claimed from the current development dataset.
 - Additional years will only be downloaded after the two-year Phase-1 review.
 
 The date ranges are configuration, not code constants. Availability and continuity will be measured before the final split is locked.
@@ -204,9 +208,36 @@ controls:
   exclusion_minutes_around_session_open: 120
   samples_per_event: 1
   matching: [weekday, calendar_month, local_start_time_pool]
+  fixed_local_times:
+    london: "04:00"
+    new_york: "12:00"
 ```
 
 Configuration is parsed into validated, immutable Pydantic models. Unknown keys fail fast to prevent silent misspellings.
+
+The fixed controls were registered before the full 2023–2024 run. They are
+04:00 London local for the London event and 12:00 New York local for the New
+York event. The matched control is sampled deterministically within the same
+calendar year, month, and weekday, outside all protected opening windows.
+
+### 4.1 Provisional Phase-1 materiality gate
+
+Before inspecting the full 2023–2024 results, the primary endpoint is frozen as
+the paired difference in 60-minute high-low range, in pips, between the opening
+event and each control family. A result supports proceeding to Phase 2 when:
+
+- the aggregate 95% bootstrap confidence interval for the mean difference is
+  above zero for both sessions and both control families;
+- the mean difference is at least 3 pips in each session-year against at least
+  one control family, with the other control family pointing in the same
+  direction;
+- at least 90% of scheduled opening events are eligible; and
+- the effect is not isolated to one year or accompanied by a material spread
+  discontinuity at the open.
+
+The 3-pip threshold is an ex-ante research-materiality threshold, not an
+estimated trading edge. January 2024 remains a pipeline smoke test and is not a
+separate validation result.
 
 ## 5. Data Pipeline
 
@@ -519,10 +550,9 @@ Planned commands:
 python -m gbpusd_research download --date 2024-01-02
 python -m gbpusd_research build-m5 --date 2024-01-02
 python -m gbpusd_research tag-sessions --date 2024-01-02
-python -m gbpusd_research validate --config config/research.yaml
-python -m gbpusd_research build-events --config config/research.yaml
-python -m gbpusd_research report-phase1 --config config/research.yaml
-python -m gbpusd_research run-phase1 --config config/research.yaml
+python -m gbpusd_research download-range --research config/research_2023_2024.yaml
+python -m gbpusd_research build-range --research config/research_2023_2024.yaml
+python -m gbpusd_research run-phase1 --research config/research_2023_2024.yaml
 ```
 
 Every command supports `--dry-run` where useful and uses non-zero exit codes for validation failure. Logging must not contain credentials or dump large binary payloads.
