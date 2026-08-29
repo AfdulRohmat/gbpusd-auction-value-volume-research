@@ -2,7 +2,28 @@
 
 **Branch:** `phase/01-event-study`  
 **Run:** `20230101_20250101_5da6674a`  
+**2024 development run:** `20240101_20250101_de41ae56`
 **Decision:** Quality gate failed; do not advance to Phase 2 from this run
+
+## Decision update: 2024 development sample
+
+The rejected two-year run remains preserved as audit evidence. The active
+development specification now excludes 2023 and uses the half-open interval
+`[2024-01-01, 2025-01-01)` via `config/research_2024.yaml`.
+
+For 2024, both London and New York have 260/262 eligible openings (99.2%). The
+60-minute mean range differences are:
+
+| Control | London | New York |
+|---|---:|---:|
+| Fixed | +10.60 pips | +2.85 pips |
+| Matched | +8.19 pips | +9.09 pips |
+
+All four 95% confidence intervals are above zero. The 2024 run is therefore
+accepted as a **development pass** and may guide exploratory Phase 2 work. It is
+not an out-of-sample validation, a robustness claim, or evidence of strategy
+profitability. Parameters selected during development must be frozen before a
+new validation year is evaluated.
 
 ## What was executed
 

@@ -150,8 +150,7 @@ def _evaluate_research_gate(
         ["calendar_year", "session_name"], observed=True
     ).ngroups
     yearly_groups_complete = bool(
-        expected_years >= 2
-        and actual_session_years == expected_session_years
+        actual_session_years == expected_session_years
         and len(yearly) == expected_session_years * 2
     )
     yearly_direction_passed = yearly_groups_complete
@@ -175,9 +174,16 @@ def _evaluate_research_gate(
         "yearly_control_directions_positive": yearly_direction_passed,
         "yearly_materiality_at_least_3_pips": yearly_materiality_passed,
         "median_open_spread_change_at_most_1_pip": spread_gate_passed,
+        "multiple_calendar_years": expected_years >= 2,
+    }
+    development_checks = {
+        name: passed
+        for name, passed in checks.items()
+        if name != "multiple_calendar_years"
     }
     return {
         "passed": all(checks.values()),
+        "development_passed": all(development_checks.values()),
         "checks": checks,
         "median_absolute_open_spread_change_pips": spread_difference,
     }

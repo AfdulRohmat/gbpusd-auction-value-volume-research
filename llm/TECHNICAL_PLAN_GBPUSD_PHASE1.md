@@ -1,6 +1,6 @@
 # Technical Plan — GBPUSD Session Research Phase 1
 
-**Status:** Executed; 2023–2024 run failed the registered coverage gate
+**Status:** 2024 accepted as development sample; independent validation pending
 **Source PRD:** `llm/PRD_GBPUSD_Session_Value_Fundamental_Research.md`  
 **Run review:** `llm/PHASE1_RESULTS_2023_2024.md`
 **Scope:** Repository foundation, market-data pipeline, session tagging, and opening event study  
@@ -69,9 +69,12 @@ preserve the V1 zero-cost requirement and still provide millisecond bid/ask
 quotes for 2023–2024.
 - Initial smoke-test period: January 2024.
 - Initial download cap: `2023-01-01` inclusive to `2025-01-01` exclusive.
-- Development period after smoke test: calendar year 2023.
-- Validation period: calendar year 2024.
-- No separate final holdout is claimed inside this initial two-year dataset.
+- Revised development period: calendar year 2024.
+- Calendar year 2023 is excluded because its tick feed has systematic missing
+  hourly blocks and only 55% eligible New York openings.
+- Validation period is not yet assigned. A later year must be evaluated without
+  changing the frozen Phase-1 endpoint and control definitions.
+- No final holdout is claimed from the current development dataset.
 - Additional years will only be downloaded after the two-year Phase-1 review.
 
 The date ranges are configuration, not code constants. Availability and continuity will be measured before the final split is locked.

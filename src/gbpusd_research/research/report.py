@@ -128,7 +128,13 @@ def render_markdown(
 ) -> str:
     eligible_openings = openings[openings["eligible"]]
     gate = data_quality["research_gate"]
-    gate_label = "PASS" if gate["passed"] else "FAIL"
+    gate_label = (
+        "PASS"
+        if gate["passed"]
+        else "DEVELOPMENT PASS / VALIDATION PENDING"
+        if gate["development_passed"]
+        else "FAIL"
+    )
     lines = [
         "# GBPUSD Phase-1 Session Event Study",
         "",
@@ -200,7 +206,12 @@ def render_markdown(
         )
     failed_checks = [name for name, passed in gate["checks"].items() if not passed]
     lines.extend(["", "## Registered research gate", ""])
-    if failed_checks:
+    if gate["development_passed"] and not gate["passed"]:
+        lines.append(
+            "The development checks passed. Multi-year validation remains pending, "
+            "so this result may guide Phase 2 research but is not robustness evidence."
+        )
+    elif failed_checks:
         lines.append(
             "The run failed: " + ", ".join(f"`{name}`" for name in failed_checks) + "."
         )
@@ -211,12 +222,20 @@ def render_markdown(
         )
     else:
         lines.append("All pre-registered Phase-1 checks passed.")
-    interpretation = (
-        "The registered checks passed, which supports studying value state next."
-        if gate["passed"]
-        else "Phase 2 should not start from this run; repair or replace the incomplete "
-        "source period and rerun the frozen specification."
-    )
+    if gate["passed"]:
+        interpretation = (
+            "The registered checks passed, which supports studying value state next."
+        )
+    elif gate["development_passed"]:
+        interpretation = (
+            "Phase 2 exploratory development may proceed with frozen Phase-1 "
+            "definitions; independent validation is still required."
+        )
+    else:
+        interpretation = (
+            "Phase 2 should not start from this run; repair or replace the incomplete "
+            "source period and rerun the frozen specification."
+        )
     lines.extend(
         [
             "",

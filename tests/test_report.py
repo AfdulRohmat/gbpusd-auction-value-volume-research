@@ -92,6 +92,7 @@ def test_report_contract_generates_four_figures_and_gate_status(tmp_path: Path) 
         ],
         "research_gate": {
             "passed": False,
+            "development_passed": False,
             "checks": {"opening_coverage_by_session_year": False},
         },
     }
@@ -105,3 +106,15 @@ def test_report_contract_generates_four_figures_and_gate_status(tmp_path: Path) 
     )
     assert "Registered Phase-1 gate: **FAIL**" in markdown
     assert "should not start" in markdown
+
+    quality["research_gate"]["development_passed"] = True
+    development_markdown = render_markdown(
+        openings,
+        controls,
+        comparisons,
+        data_quality=quality,
+        start="2024-01-01",
+        end="2025-01-01",
+    )
+    assert "DEVELOPMENT PASS / VALIDATION PENDING" in development_markdown
+    assert "exploratory development may proceed" in development_markdown

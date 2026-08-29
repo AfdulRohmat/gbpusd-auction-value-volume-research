@@ -52,15 +52,15 @@ Build and run the complete January smoke study from the cached monthly archive:
 .venv/bin/python -m gbpusd_research run-phase1
 ```
 
-Run the frozen two-year Phase-1 workflow:
+Run the revised 2024 development workflow:
 
 ```bash
 .venv/bin/python -m gbpusd_research download-range \
-  --research config/research_2023_2024.yaml
+  --research config/research_2024.yaml
 .venv/bin/python -m gbpusd_research build-range \
-  --research config/research_2023_2024.yaml
+  --research config/research_2024.yaml
 .venv/bin/python -m gbpusd_research run-phase1 \
-  --research config/research_2023_2024.yaml
+  --research config/research_2024.yaml
 ```
 
 The range downloader retries failed requests and continues with later months.
@@ -77,8 +77,10 @@ Run tests and static checks:
 
 - `config/research.yaml` contains instrument, source-data, quality, and study
   settings for the January 2024 smoke test.
-- `config/research_2023_2024.yaml` caps the initial full dataset to the half-open
-  interval `[2023-01-01, 2025-01-01)`, covering exactly two calendar years.
+- `config/research_2024.yaml` is the active development specification covering
+  `[2024-01-01, 2025-01-01)`.
+- `config/research_2023_2024.yaml` is retained for audit of the rejected
+  two-year run; incomplete New York coverage makes 2023 unsuitable.
 - `config/sessions.yaml` contains timezone-aware session and control settings.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
@@ -91,11 +93,11 @@ Run tests and static checks:
 - HistData's volume field is not used. Tick count is the explicit V1 activity
   proxy.
 
-To validate the two-year configuration without downloading data:
+To validate the active development configuration without downloading data:
 
 ```bash
 .venv/bin/python -m gbpusd_research config-check \
-  --research config/research_2023_2024.yaml
+  --research config/research_2024.yaml
 ```
 
 ## Research documentation
