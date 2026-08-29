@@ -1,0 +1,22 @@
+data:
+  policy_events_path: data/reference/policy_rate_events_phase3b.csv
+  macro_events_path: data/reference/macro_release_events.csv
+  yields_path: data/reference/two_year_yields.csv
+
+scoring:
+  yield_lookback_observations: 20
+  yield_deadband_pct: 0.10
+  primary_bias_threshold: 2
+  weighted_bias_threshold: 3
+  robustness_weights:
+    policy: 3
+    inflation: 2
+    labor: 2
+    yield_expectation: 1
+
+analysis:
+  horizons_minutes: [15, 30, 60, 90]
+  minimum_feature_coverage_ratio: 0.95
+  minimum_group_size: 30
+  minimum_direction_months: 2
+  materiality_pips: 2.0

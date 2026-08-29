@@ -202,6 +202,110 @@ class ValueStateConfig(StrictModel):
     research_gate: ValueResearchGateConfig
 
 
+class PolicyBiasConfig(StrictModel):
+    events_path: Path
+    impulse_lookback_days: int = Field(ge=1)
+
+
+class FundamentalAnalysisConfig(StrictModel):
+    horizons_minutes: tuple[int, ...]
+    minimum_feature_coverage_ratio: float = Field(gt=0, le=1)
+    minimum_group_size: int = Field(ge=2)
+    minimum_direction_months: int = Field(ge=1)
+    materiality_pips: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_horizons(self) -> FundamentalAnalysisConfig:
+        values = self.horizons_minutes
+        if not values or any(value <= 0 or value % 5 for value in values):
+            raise ValueError(
+                "analysis.horizons_minutes must be positive and M5-aligned"
+            )
+        if tuple(sorted(set(values))) != values:
+            raise ValueError("analysis.horizons_minutes must be sorted and unique")
+        return self
+
+
+class FundamentalBiasConfig(StrictModel):
+    policy: PolicyBiasConfig
+    analysis: FundamentalAnalysisConfig
+
+
+class FundamentalStrengthDataConfig(StrictModel):
+    policy_events_path: Path
+    macro_events_path: Path
+    yields_path: Path
+
+
+class FundamentalStrengthWeightsConfig(StrictModel):
+    policy: int = Field(ge=1)
+    inflation: int = Field(ge=1)
+    labor: int = Field(ge=1)
+    yield_expectation: int = Field(ge=1)
+
+
+class FundamentalStrengthScoringConfig(StrictModel):
+    yield_lookback_observations: int = Field(ge=1)
+    yield_deadband_pct: float = Field(gt=0)
+    primary_bias_threshold: int = Field(ge=1, le=8)
+    weighted_bias_threshold: int = Field(ge=1)
+    robustness_weights: FundamentalStrengthWeightsConfig
+
+
+class FundamentalStrengthConfig(StrictModel):
+    data: FundamentalStrengthDataConfig
+    scoring: FundamentalStrengthScoringConfig
+    analysis: FundamentalAnalysisConfig
+
+
+class FundamentalRepricingDataConfig(StrictModel):
+    policy_decisions_path: Path
+    macro_events_path: Path
+    yields_path: Path
+
+
+class FundamentalRepricingSignalConfig(StrictModel):
+    active_yield_observations: int = Field(ge=1)
+    bias_threshold_bps: float = Field(gt=0)
+
+
+class FundamentalRepricingAnalysisConfig(StrictModel):
+    horizons_session_days: tuple[int, ...]
+    primary_horizon_session_days: int = Field(ge=1)
+    bootstrap_resamples: int = Field(ge=100)
+    familywise_confidence_level: float = Field(gt=0, lt=1)
+    minimum_directional_regimes: int = Field(ge=2)
+    minimum_regimes_per_direction: int = Field(ge=1)
+    materiality_pips: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_horizons(self) -> FundamentalRepricingAnalysisConfig:
+        values = self.horizons_session_days
+        if not values or any(value <= 0 for value in values):
+            raise ValueError(
+                "analysis.horizons_session_days must contain positive values"
+            )
+        if tuple(sorted(set(values))) != values:
+            raise ValueError(
+                "analysis.horizons_session_days must be sorted and unique"
+            )
+        if self.primary_horizon_session_days not in values:
+            raise ValueError(
+                "analysis.primary_horizon_session_days must be registered"
+            )
+        if self.minimum_directional_regimes < 2 * self.minimum_regimes_per_direction:
+            raise ValueError(
+                "minimum_directional_regimes must cover both direction minima"
+            )
+        return self
+
+
+class FundamentalRepricingConfig(StrictModel):
+    data: FundamentalRepricingDataConfig
+    signal: FundamentalRepricingSignalConfig
+    analysis: FundamentalRepricingAnalysisConfig
+
+
 def _read_yaml(path: Path) -> object:
     try:
         with path.open(encoding="utf-8") as stream:
@@ -229,3 +333,21 @@ def load_value_state_config(path: Path) -> ValueStateConfig:
     """Load and strictly validate Phase-2 value-state configuration."""
 
     return ValueStateConfig.model_validate(_read_yaml(path))
+
+
+def load_fundamental_bias_config(path: Path) -> FundamentalBiasConfig:
+    """Load and strictly validate Phase-3 fundamental-bias configuration."""
+
+    return FundamentalBiasConfig.model_validate(_read_yaml(path))
+
+
+def load_fundamental_strength_config(path: Path) -> FundamentalStrengthConfig:
+    """Load and strictly validate Phase-3B relative-strength configuration."""
+
+    return FundamentalStrengthConfig.model_validate(_read_yaml(path))
+
+
+def load_fundamental_repricing_config(path: Path) -> FundamentalRepricingConfig:
+    """Load and strictly validate Phase-3C repricing configuration."""
+
+    return FundamentalRepricingConfig.model_validate(_read_yaml(path))

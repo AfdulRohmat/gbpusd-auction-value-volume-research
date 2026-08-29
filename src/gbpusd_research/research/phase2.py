@@ -42,6 +42,18 @@ def _hash_json(content: object) -> str:
     ).hexdigest()
 
 
+def phase2_run_id(config: ProjectConfig, value_config: ValueStateConfig) -> str:
+    """Return the deterministic report identifier for a Phase-2 configuration."""
+
+    combined_config = {
+        "project": config.model_dump(mode="json"),
+        "value_state": value_config.model_dump(mode="json"),
+    }
+    config_hash = _hash_json(combined_config)
+    research = config.research
+    return f"{research.data.start:%Y%m%d}_{research.data.end:%Y%m%d}_{config_hash[:8]}"
+
+
 def _git_commit(project_root: Path) -> str | None:
     result = subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -468,9 +480,7 @@ def run_phase2(
     }
     source_snapshot = _source_snapshot(project_root, config)
     config_hash = _hash_json(combined_config)
-    run_id = (
-        f"{research.data.start:%Y%m%d}_{research.data.end:%Y%m%d}_{config_hash[:8]}"
-    )
+    run_id = phase2_run_id(config, value_config)
     processed_root = resolve_within_project(project_root, research.data.paths.processed)
     output = processed_root / "reports" / "phase2" / run_id
     output.mkdir(parents=True, exist_ok=True)

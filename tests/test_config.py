@@ -5,6 +5,9 @@ from pydantic import ValidationError
 
 from gbpusd_research.config import (
     ResearchConfig,
+    load_fundamental_bias_config,
+    load_fundamental_repricing_config,
+    load_fundamental_strength_config,
     load_project_config,
     load_value_state_config,
 )
@@ -30,6 +33,40 @@ def test_checked_in_value_state_configuration_is_valid() -> None:
     assert config.profile.bin_size_pips == 1.0
     assert config.profile.value_area_fraction == 0.70
     assert config.classification.transition_horizons_minutes == (15, 30, 60, 90)
+
+
+def test_checked_in_fundamental_configuration_is_valid() -> None:
+    config = load_fundamental_bias_config(PROJECT_ROOT / "config/fundamental_bias.yaml")
+
+    assert config.policy.impulse_lookback_days == 90
+    assert config.analysis.horizons_minutes == (15, 30, 60, 90)
+    assert config.analysis.minimum_group_size == 30
+
+
+def test_checked_in_relative_strength_configuration_is_valid() -> None:
+    config = load_fundamental_strength_config(
+        PROJECT_ROOT / "config/fundamental_strength.yaml"
+    )
+
+    assert config.scoring.primary_bias_threshold == 2
+    assert config.scoring.yield_lookback_observations == 20
+    assert config.scoring.robustness_weights.model_dump() == {
+        "policy": 3,
+        "inflation": 2,
+        "labor": 2,
+        "yield_expectation": 1,
+    }
+
+
+def test_checked_in_repricing_configuration_is_valid() -> None:
+    config = load_fundamental_repricing_config(
+        PROJECT_ROOT / "config/fundamental_repricing.yaml"
+    )
+
+    assert config.signal.active_yield_observations == 5
+    assert config.signal.bias_threshold_bps == 5.0
+    assert config.analysis.horizons_session_days == (1, 3, 5)
+    assert config.analysis.primary_horizon_session_days == 3
 
 
 def test_two_year_configuration_has_exclusive_2025_end() -> None:

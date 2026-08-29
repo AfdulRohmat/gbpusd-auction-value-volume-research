@@ -3,9 +3,13 @@
 Reproducible research pipeline for testing whether GBPUSD movement around the
 London and New York FX opens differs from matched non-opening periods.
 
-The current implementation covers Phase 1 session-opening research and Phase 2
-point-in-time VWAP/previous-value-state research. Trading signals and P&L
-simulation remain intentionally deferred until the research gates are reviewed.
+The current implementation covers Phase 1 session-opening research, Phase 2
+point-in-time VWAP/previous-value-state research, Phase 3 point-in-time
+monetary-policy bias research, and the Phase 3B GBP-minus-USD relative
+fundamental-strength extension. Phase 3C adds a zero-cost market-implied
+surprise proxy from event-day two-year yield repricing and tests future
+same-session opens. Trading signals and P&L simulation remain intentionally
+deferred until the research gates are reviewed.
 
 ## Requirements
 
@@ -72,6 +76,33 @@ Rebuild the M5 files with exact tick-activity moments, then run Phase 2:
   --value-state config/value_state.yaml
 ```
 
+Run the Phase-3 policy-bias study from the matching Phase-2 artifact:
+
+```bash
+.venv/bin/python -m gbpusd_research run-phase3 \
+  --research config/research_2024.yaml \
+  --value-state config/value_state.yaml \
+  --fundamental config/fundamental_bias.yaml
+```
+
+Run the separately registered Phase-3B relative-strength extension:
+
+```bash
+.venv/bin/python -m gbpusd_research run-phase3b \
+  --research config/research_2024.yaml \
+  --value-state config/value_state.yaml \
+  --fundamental-strength config/fundamental_strength.yaml
+```
+
+Run the separately registered Phase-3C market-implied repricing study:
+
+```bash
+.venv/bin/python -m gbpusd_research run-phase3c \
+  --research config/research_2024.yaml \
+  --value-state config/value_state.yaml \
+  --fundamental-repricing config/fundamental_repricing.yaml
+```
+
 The range downloader retries failed requests and continues with later months.
 Re-running it validates and reuses archives already present in the cache.
 
@@ -93,6 +124,13 @@ Run tests and static checks:
 - `config/sessions.yaml` contains timezone-aware session and control settings.
 - `config/value_state.yaml` freezes the Phase-2 VWAP, Volume Profile,
   classification, and development-gate definitions.
+- `config/fundamental_bias.yaml` freezes the Phase-3 policy-bias lookback,
+  analysis horizons, and development gate.
+- `config/fundamental_strength.yaml` freezes the Phase-3B equal-weight primary
+  score, impact-weighted sensitivity model, point-in-time data paths, and gate.
+- `config/fundamental_repricing.yaml` freezes the Phase-3C event-day 2Y shock,
+  five-observation signal lifetime, five-basis-point bias threshold,
+  same-session horizons, cluster bootstrap, and development gate.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
 - Date ranges use a half-open interval: `start` is included and `end` is
@@ -117,3 +155,10 @@ To validate the active development configuration without downloading data:
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE1.md`
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE2.md`
 - `llm/PHASE2_RESULTS_2024.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE3.md`
+- `llm/PHASE3_RESULTS_2024.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE3B.md`
+- `llm/PHASE3B_RESULTS_2024.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE3C.md`
+- `llm/PHASE3C_RESULTS_2024.md`
+- `llm/PHASE3_WRAP_UP.md`
