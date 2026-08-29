@@ -6,7 +6,7 @@ import pandas as pd
 
 from gbpusd_research.config import load_project_config
 from gbpusd_research.data.histdata import archive_path
-from gbpusd_research.data.pipeline import build_day, tag_day_sessions
+from gbpusd_research.data.pipeline import build_day, build_month_m5, tag_day_sessions
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,3 +43,7 @@ def test_one_day_vertical_slice(tmp_path: Path) -> None:
     assert session_summary["session_events"] == 2
     assert session_summary["tagged_bars"] == 2
     assert (tmp_path / session_summary["calendar_output"]).is_file()
+
+    monthly = build_month_m5(tmp_path, config, 2024, 1)
+    assert monthly["m5_quality"]["valid"] is True
+    assert (tmp_path / monthly["m5_output"]).is_file()

@@ -16,4 +16,6 @@ controls:
   exclusion_minutes_around_session_open: 120
   samples_per_event: 1
   matching: [weekday, calendar_month, local_start_time_pool]
-
+  fixed_local_times:
+    london: "04:00"
+    new_york: "12:00"
