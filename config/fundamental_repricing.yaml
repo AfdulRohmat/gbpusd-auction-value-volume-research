@@ -1,0 +1,17 @@
+data:
+  policy_decisions_path: data/reference/policy_decision_events_2024.csv
+  macro_events_path: data/reference/macro_release_events.csv
+  yields_path: data/reference/two_year_yields.csv
+
+signal:
+  active_yield_observations: 5
+  bias_threshold_bps: 5.0
+
+analysis:
+  horizons_session_days: [1, 3, 5]
+  primary_horizon_session_days: 3
+  bootstrap_resamples: 10000
+  familywise_confidence_level: 0.95
+  minimum_directional_regimes: 10
+  minimum_regimes_per_direction: 3
+  materiality_pips: 6.0

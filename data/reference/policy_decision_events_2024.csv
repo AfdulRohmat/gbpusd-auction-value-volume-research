@@ -1,0 +1,17 @@
+event_id,currency,pillar,indicator,reference_period,available_at_utc,source_url
+boe-decision-2024-02-01,GBP,policy,policy_decision,2024-02-01,2024-02-01T12:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/february-2024
+fed-decision-2024-01-31,USD,policy,policy_decision,2024-01-31,2024-01-31T19:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20240131a.htm
+boe-decision-2024-03-21,GBP,policy,policy_decision,2024-03-21,2024-03-21T12:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/march-2024
+fed-decision-2024-03-20,USD,policy,policy_decision,2024-03-20,2024-03-20T18:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20240320a.htm
+boe-decision-2024-05-09,GBP,policy,policy_decision,2024-05-09,2024-05-09T11:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/may-2024
+fed-decision-2024-05-01,USD,policy,policy_decision,2024-05-01,2024-05-01T18:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20240501a.htm
+boe-decision-2024-06-20,GBP,policy,policy_decision,2024-06-20,2024-06-20T11:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/june-2024
+fed-decision-2024-06-12,USD,policy,policy_decision,2024-06-12,2024-06-12T18:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20240612a.htm
+boe-decision-2024-08-01,GBP,policy,policy_decision,2024-08-01,2024-08-01T11:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/august-2024
+fed-decision-2024-07-31,USD,policy,policy_decision,2024-07-31,2024-07-31T18:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20240731a.htm
+boe-decision-2024-09-19,GBP,policy,policy_decision,2024-09-19,2024-09-19T11:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/september-2024
+fed-decision-2024-09-18,USD,policy,policy_decision,2024-09-18,2024-09-18T18:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20240918a.htm
+boe-decision-2024-11-07,GBP,policy,policy_decision,2024-11-07,2024-11-07T12:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/november-2024
+fed-decision-2024-11-07,USD,policy,policy_decision,2024-11-07,2024-11-07T19:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20241107a.htm
+boe-decision-2024-12-19,GBP,policy,policy_decision,2024-12-19,2024-12-19T12:00:00Z,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/december-2024
+fed-decision-2024-12-18,USD,policy,policy_decision,2024-12-18,2024-12-18T19:00:00Z,https://www.federalreserve.gov/newsevents/pressreleases/monetary20241218a.htm

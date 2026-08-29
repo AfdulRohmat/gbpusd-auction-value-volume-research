@@ -13,7 +13,13 @@ from pathlib import Path
 import httpx
 from pydantic import ValidationError
 
-from gbpusd_research.config import load_project_config, load_value_state_config
+from gbpusd_research.config import (
+    load_fundamental_bias_config,
+    load_fundamental_repricing_config,
+    load_fundamental_strength_config,
+    load_project_config,
+    load_value_state_config,
+)
 from gbpusd_research.data.histdata import (
     HistDataError,
     download_month,
@@ -27,6 +33,9 @@ from gbpusd_research.data.pipeline import (
 )
 from gbpusd_research.research.phase1 import run_phase1
 from gbpusd_research.research.phase2 import run_phase2
+from gbpusd_research.research.phase3 import run_phase3
+from gbpusd_research.research.phase3b import run_phase3b
+from gbpusd_research.research.phase3c import run_phase3c
 from gbpusd_research.utils.logging import configure_logging
 from gbpusd_research.utils.paths import find_project_root, resolve_within_project
 
@@ -103,6 +112,59 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("config/value_state.yaml"),
         help="Phase-2 value-state configuration relative to the project root",
+    )
+
+    phase3 = subparsers.add_parser(
+        "run-phase3", help="create point-in-time policy-bias features and report"
+    )
+    _add_config_arguments(phase3)
+    phase3.add_argument(
+        "--value-state",
+        type=Path,
+        default=Path("config/value_state.yaml"),
+        help="Phase-2 value-state configuration relative to the project root",
+    )
+    phase3.add_argument(
+        "--fundamental",
+        type=Path,
+        default=Path("config/fundamental_bias.yaml"),
+        help="Phase-3 fundamental configuration relative to the project root",
+    )
+
+    phase3b = subparsers.add_parser(
+        "run-phase3b",
+        help="create point-in-time relative fundamental-strength features and report",
+    )
+    _add_config_arguments(phase3b)
+    phase3b.add_argument(
+        "--value-state",
+        type=Path,
+        default=Path("config/value_state.yaml"),
+        help="Phase-2 value-state configuration relative to the project root",
+    )
+    phase3b.add_argument(
+        "--fundamental-strength",
+        type=Path,
+        default=Path("config/fundamental_strength.yaml"),
+        help="Phase-3B strength configuration relative to the project root",
+    )
+
+    phase3c = subparsers.add_parser(
+        "run-phase3c",
+        help="test point-in-time event-day 2Y repricing at future session opens",
+    )
+    _add_config_arguments(phase3c)
+    phase3c.add_argument(
+        "--value-state",
+        type=Path,
+        default=Path("config/value_state.yaml"),
+        help="Phase-2 value-state configuration relative to the project root",
+    )
+    phase3c.add_argument(
+        "--fundamental-repricing",
+        type=Path,
+        default=Path("config/fundamental_repricing.yaml"),
+        help="Phase-3C repricing configuration relative to the project root",
     )
     return parser
 
@@ -269,6 +331,52 @@ def main(argv: Sequence[str] | None = None) -> int:
             summary = run_phase2(project_root, config, value_config)
         except (ValueError, ValidationError) as exc:
             logging.getLogger(__name__).error("Phase-2 run failed: %s", exc)
+            return 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 0
+    if args.command == "run-phase3":
+        try:
+            value_config = load_value_state_config(
+                _resolve_config_path(project_root, args.value_state)
+            )
+            fundamental_config = load_fundamental_bias_config(
+                _resolve_config_path(project_root, args.fundamental)
+            )
+            summary = run_phase3(project_root, config, value_config, fundamental_config)
+        except (ValueError, ValidationError) as exc:
+            logging.getLogger(__name__).error("Phase-3 run failed: %s", exc)
+            return 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 0
+    if args.command == "run-phase3b":
+        try:
+            value_config = load_value_state_config(
+                _resolve_config_path(project_root, args.value_state)
+            )
+            fundamental_config = load_fundamental_strength_config(
+                _resolve_config_path(project_root, args.fundamental_strength)
+            )
+            summary = run_phase3b(
+                project_root, config, value_config, fundamental_config
+            )
+        except (ValueError, ValidationError) as exc:
+            logging.getLogger(__name__).error("Phase-3B run failed: %s", exc)
+            return 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 0
+    if args.command == "run-phase3c":
+        try:
+            value_config = load_value_state_config(
+                _resolve_config_path(project_root, args.value_state)
+            )
+            repricing_config = load_fundamental_repricing_config(
+                _resolve_config_path(project_root, args.fundamental_repricing)
+            )
+            summary = run_phase3c(
+                project_root, config, value_config, repricing_config
+            )
+        except (ValueError, ValidationError) as exc:
+            logging.getLogger(__name__).error("Phase-3C run failed: %s", exc)
             return 1
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0

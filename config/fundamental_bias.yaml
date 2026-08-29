@@ -1,0 +1,11 @@
+policy:
+  events_path: data/reference/policy_rate_events.csv
+  impulse_lookback_days: 90
+
+analysis:
+  horizons_minutes: [15, 30, 60, 90]
+  minimum_feature_coverage_ratio: 0.95
+  minimum_group_size: 30
+  minimum_direction_months: 2
+  materiality_pips: 2.0
+

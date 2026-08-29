@@ -1,0 +1,9 @@
+event_id,currency,available_at_utc,rate_lower_pct,rate_upper_pct,source_url
+boe-2023-08-03,GBP,2023-08-03T11:00:00Z,5.25,5.25,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2023/august-2023
+fed-2023-07-26,USD,2023-07-26T18:00:00Z,5.25,5.50,https://www.federalreserve.gov/newsevents/pressreleases/monetary20230726a.htm
+boe-2024-08-01,GBP,2024-08-01T11:00:00Z,5.00,5.00,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/august-2024
+fed-2024-09-18,USD,2024-09-18T18:00:00Z,4.75,5.00,https://www.federalreserve.gov/newsevents/pressreleases/monetary20240918a.htm
+boe-2024-11-07,GBP,2024-11-07T12:00:00Z,4.75,4.75,https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2024/november-2024
+fed-2024-11-07,USD,2024-11-07T19:00:00Z,4.50,4.75,https://www.federalreserve.gov/newsevents/pressreleases/monetary20241107a.htm
+fed-2024-12-18,USD,2024-12-18T19:00:00Z,4.25,4.50,https://www.federalreserve.gov/newsevents/pressreleases/monetary20241218a.htm
+
