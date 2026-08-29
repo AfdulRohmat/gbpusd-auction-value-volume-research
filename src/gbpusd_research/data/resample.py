@@ -13,6 +13,10 @@ def resample_ticks_m5(ticks: pd.DataFrame) -> pd.DataFrame:
 
     indexed = ticks.set_index("timestamp")
     indexed["_tick_timestamp"] = indexed.index
+    indexed["_mid_activity"] = indexed["mid"] * indexed["activity"]
+    indexed["_mid_squared_activity"] = (
+        indexed["mid"] * indexed["mid"] * indexed["activity"]
+    )
     output: list[pd.DataFrame | pd.Series] = []
     for side in ("bid", "ask", "mid"):
         ohlc = indexed[side].resample("5min", label="left", closed="left").ohlc()
@@ -24,6 +28,10 @@ def resample_ticks_m5(ticks: pd.DataFrame) -> pd.DataFrame:
         [
             grouped.size().rename("tick_count"),
             grouped["activity"].sum(min_count=1).rename("activity_count"),
+            grouped["_mid_activity"].sum(min_count=1).rename("mid_activity_sum"),
+            grouped["_mid_squared_activity"]
+            .sum(min_count=1)
+            .rename("mid_squared_activity_sum"),
             grouped["spread_pips"].first().rename("spread_open_pips"),
             grouped["spread_pips"].median().rename("spread_median_pips"),
             grouped["spread_pips"].mean().rename("spread_mean_pips"),

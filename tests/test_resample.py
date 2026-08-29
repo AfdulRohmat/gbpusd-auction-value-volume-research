@@ -39,6 +39,10 @@ def test_m5_boundaries_and_ohlc() -> None:
     assert bars.loc[0, "bid_close"] == pytest.approx(1.2710)
     assert bars.loc[0, "tick_count"] == 2
     assert bars.loc[1, "tick_count"] == 1
+    assert bars.loc[0, "mid_activity_sum"] == pytest.approx(1.2701 + 1.27115)
+    assert bars.loc[0, "mid_squared_activity_sum"] == pytest.approx(
+        1.2701**2 + 1.27115**2
+    )
 
 
 def test_tick_and_bar_quality() -> None:

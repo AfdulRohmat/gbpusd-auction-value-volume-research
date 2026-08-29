@@ -3,10 +3,9 @@
 Reproducible research pipeline for testing whether GBPUSD movement around the
 London and New York FX opens differs from matched non-opening periods.
 
-The current implementation scope is Phase 1 only: repository foundation,
-market-data preparation, session tagging, and the opening event study. Trading
-signals and P&L simulation are intentionally deferred until the Phase-1 report
-has been reviewed.
+The current implementation covers Phase 1 session-opening research and Phase 2
+point-in-time VWAP/previous-value-state research. Trading signals and P&L
+simulation remain intentionally deferred until the research gates are reviewed.
 
 ## Requirements
 
@@ -63,6 +62,16 @@ Run the revised 2024 development workflow:
   --research config/research_2024.yaml
 ```
 
+Rebuild the M5 files with exact tick-activity moments, then run Phase 2:
+
+```bash
+.venv/bin/python -m gbpusd_research build-range \
+  --research config/research_2024.yaml --force
+.venv/bin/python -m gbpusd_research run-phase2 \
+  --research config/research_2024.yaml \
+  --value-state config/value_state.yaml
+```
+
 The range downloader retries failed requests and continues with later months.
 Re-running it validates and reuses archives already present in the cache.
 
@@ -82,6 +91,8 @@ Run tests and static checks:
 - `config/research_2023_2024.yaml` is retained for audit of the rejected
   two-year run; incomplete New York coverage makes 2023 unsuitable.
 - `config/sessions.yaml` contains timezone-aware session and control settings.
+- `config/value_state.yaml` freezes the Phase-2 VWAP, Volume Profile,
+  classification, and development-gate definitions.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
 - Date ranges use a half-open interval: `start` is included and `end` is
@@ -91,7 +102,7 @@ Run tests and static checks:
 - HistData Generic ASCII timestamps are fixed EST (`UTC-05:00`) without DST;
   normalization uses that fixed offset before converting to UTC.
 - HistData's volume field is not used. Tick count is the explicit V1 activity
-  proxy.
+  proxy for both VWAP and Volume Profile; it is not centralized traded volume.
 
 To validate the active development configuration without downloading data:
 
@@ -104,3 +115,5 @@ To validate the active development configuration without downloading data:
 
 - `llm/PRD_GBPUSD_Session_Value_Fundamental_Research.md`
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE1.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE2.md`
+- `llm/PHASE2_RESULTS_2024.md`

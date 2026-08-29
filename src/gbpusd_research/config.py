@@ -153,6 +153,55 @@ class ProjectConfig(StrictModel):
     sessions: SessionsConfig
 
 
+class ProfileConfig(StrictModel):
+    bin_size_pips: float = Field(gt=0)
+    value_area_fraction: float = Field(gt=0, le=1)
+    minimum_m5_coverage_ratio: float = Field(gt=0, le=1)
+
+
+class VwapConfig(StrictModel):
+    slope_minutes: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_slope(self) -> VwapConfig:
+        if self.slope_minutes % 5:
+            raise ValueError("vwap.slope_minutes must be M5-aligned")
+        return self
+
+
+class ClassificationConfig(StrictModel):
+    boundary_buffer_pips: float = Field(ge=0)
+    acceptance_consecutive_closes: int = Field(ge=2)
+    transition_horizons_minutes: tuple[int, ...]
+
+    @model_validator(mode="after")
+    def validate_horizons(self) -> ClassificationConfig:
+        values = self.transition_horizons_minutes
+        if not values or any(value <= 0 or value % 5 for value in values):
+            raise ValueError(
+                "classification.transition_horizons_minutes must be positive and "
+                "M5-aligned"
+            )
+        if tuple(sorted(set(values))) != values:
+            raise ValueError(
+                "classification.transition_horizons_minutes must be sorted and unique"
+            )
+        return self
+
+
+class ValueResearchGateConfig(StrictModel):
+    minimum_feature_coverage_ratio: float = Field(gt=0, le=1)
+    minimum_group_size: int = Field(ge=2)
+    materiality_pips: float = Field(gt=0)
+
+
+class ValueStateConfig(StrictModel):
+    profile: ProfileConfig
+    vwap: VwapConfig
+    classification: ClassificationConfig
+    research_gate: ValueResearchGateConfig
+
+
 def _read_yaml(path: Path) -> object:
     try:
         with path.open(encoding="utf-8") as stream:
@@ -174,3 +223,9 @@ def load_project_config(research_path: Path, sessions_path: Path) -> ProjectConf
         research=ResearchConfig.model_validate(_read_yaml(research_path)),
         sessions=SessionsConfig.model_validate(_read_yaml(sessions_path)),
     )
+
+
+def load_value_state_config(path: Path) -> ValueStateConfig:
+    """Load and strictly validate Phase-2 value-state configuration."""
+
+    return ValueStateConfig.model_validate(_read_yaml(path))
