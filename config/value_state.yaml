@@ -1,0 +1,17 @@
+profile:
+  bin_size_pips: 1.0
+  value_area_fraction: 0.70
+  minimum_m5_coverage_ratio: 0.95
+
+vwap:
+  slope_minutes: 30
+
+classification:
+  boundary_buffer_pips: 1.0
+  acceptance_consecutive_closes: 2
+  transition_horizons_minutes: [15, 30, 60, 90]
+
+research_gate:
+  minimum_feature_coverage_ratio: 0.95
+  minimum_group_size: 30
+  materiality_pips: 2.0

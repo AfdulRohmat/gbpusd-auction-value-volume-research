@@ -3,7 +3,11 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from gbpusd_research.config import ResearchConfig, load_project_config
+from gbpusd_research.config import (
+    ResearchConfig,
+    load_project_config,
+    load_value_state_config,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -18,6 +22,14 @@ def test_checked_in_configuration_is_valid() -> None:
     assert config.research.data.start.isoformat() == "2024-01-01"
     assert config.sessions.sessions["london"].timezone == "Europe/London"
     assert config.sessions.sessions["new_york"].open.isoformat() == "08:00:00"
+
+
+def test_checked_in_value_state_configuration_is_valid() -> None:
+    config = load_value_state_config(PROJECT_ROOT / "config/value_state.yaml")
+
+    assert config.profile.bin_size_pips == 1.0
+    assert config.profile.value_area_fraction == 0.70
+    assert config.classification.transition_horizons_minutes == (15, 30, 60, 90)
 
 
 def test_two_year_configuration_has_exclusive_2025_end() -> None:

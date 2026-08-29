@@ -13,7 +13,7 @@ from pathlib import Path
 import httpx
 from pydantic import ValidationError
 
-from gbpusd_research.config import load_project_config
+from gbpusd_research.config import load_project_config, load_value_state_config
 from gbpusd_research.data.histdata import (
     HistDataError,
     download_month,
@@ -26,6 +26,7 @@ from gbpusd_research.data.pipeline import (
     tag_day_sessions,
 )
 from gbpusd_research.research.phase1 import run_phase1
+from gbpusd_research.research.phase2 import run_phase2
 from gbpusd_research.utils.logging import configure_logging
 from gbpusd_research.utils.paths import find_project_root, resolve_within_project
 
@@ -92,6 +93,17 @@ def build_parser() -> argparse.ArgumentParser:
         "run-phase1", help="create Phase-1 events, controls, statistics, and report"
     )
     _add_config_arguments(phase1)
+
+    phase2 = subparsers.add_parser(
+        "run-phase2", help="create point-in-time value-state features and report"
+    )
+    _add_config_arguments(phase2)
+    phase2.add_argument(
+        "--value-state",
+        type=Path,
+        default=Path("config/value_state.yaml"),
+        help="Phase-2 value-state configuration relative to the project root",
+    )
     return parser
 
 
@@ -246,6 +258,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             summary = run_phase1(project_root, config)
         except ValueError as exc:
             logging.getLogger(__name__).error("Phase-1 run failed: %s", exc)
+            return 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 0
+    if args.command == "run-phase2":
+        try:
+            value_config = load_value_state_config(
+                _resolve_config_path(project_root, args.value_state)
+            )
+            summary = run_phase2(project_root, config, value_config)
+        except (ValueError, ValidationError) as exc:
+            logging.getLogger(__name__).error("Phase-2 run failed: %s", exc)
             return 1
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0
