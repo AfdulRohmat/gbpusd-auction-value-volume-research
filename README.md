@@ -16,6 +16,9 @@ coverage-first, price-only 15-minute opening-auction state machine with fixed
 2R, session-hold, and trailing exits. Phase 7 steps away from trading and maps
 continuous 30-minute balance/imbalance episodes, their duration, transition
 signatures, and opening-session controls across 2024–2025.
+Phase 8 turns the frozen balance boundary into an executable opening strategy:
+midpoint rotation after rejection versus continuation after confirmed
+acceptance, with bid/ask costs and combined-route diagnostics.
 
 ## Requirements
 
@@ -158,6 +161,16 @@ Run the non-trading Phase-7 auction-state taxonomy:
   --taxonomy config/auction_state_taxonomy.yaml
 ```
 
+Run the exploratory Phase-8 balance-boundary strategy:
+
+```bash
+.venv/bin/python -m gbpusd_research run-phase8 \
+  --research config/research_2024.yaml \
+  --second-research config/research_2025.yaml \
+  --taxonomy config/auction_state_taxonomy.yaml \
+  --balance-boundary config/balance_boundary_strategy.yaml
+```
+
 The range downloader retries failed requests and continues with later months.
 Re-running it validates and reuses archives already present in the cache.
 
@@ -198,6 +211,9 @@ Run tests and static checks:
 - `config/auction_state_taxonomy.yaml` freezes the Phase-7 continuous
   balance/imbalance geometry, independent activity regimes, confirmation,
   duration, transition, and opening/control analysis.
+- `config/balance_boundary_strategy.yaml` freezes the Phase-8 opening balance
+  context, rejection/acceptance triggers, quote-side execution, exits, and
+  interpretation thresholds.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
 - Date ranges use a half-open interval: `start` is included and `end` is
@@ -237,3 +253,5 @@ To validate the active development configuration without downloading data:
 - `llm/PHASE6_RESULTS_2024_2025.md`
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE7.md`
 - `llm/PHASE7_RESULTS_2024_2025.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE8.md`
+- `llm/PHASE8_RESULTS_2024_2025.md`
