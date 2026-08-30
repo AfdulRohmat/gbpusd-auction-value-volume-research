@@ -10,7 +10,8 @@ fundamental-strength extension. Phase 3C adds a zero-cost market-implied
 surprise proxy from event-day two-year yield repricing and tests future
 same-session opens. Phase 4 adds the first frozen, cost-aware P&L simulation:
 opening-only previous-value reversion with 2024 development context and an
-untouched 2025 validation sample.
+untouched 2025 validation sample. Phase 5 performs a post-validation component
+ablation on the now-development-only 2024–2025 evidence.
 
 ## Requirements
 
@@ -123,6 +124,17 @@ Build the zero-cost 2025 validation data and run the frozen Phase-4 strategy:
   --opening-value config/opening_value_strategy.yaml
 ```
 
+Run the exploratory Phase-5 filter and execution ablation:
+
+```bash
+.venv/bin/python -m gbpusd_research run-phase5 \
+  --research config/research_2024.yaml \
+  --second-research config/research_2025.yaml \
+  --value-state config/value_state.yaml \
+  --opening-value config/opening_value_strategy.yaml \
+  --ablation config/opening_ablation.yaml
+```
+
 The range downloader retries failed requests and continues with later months.
 Re-running it validates and reuses archives already present in the cache.
 
@@ -155,6 +167,8 @@ Run tests and static checks:
   same-session horizons, cluster bootstrap, and development gate.
 - `config/opening_value_strategy.yaml` freezes the Phase-4 entry deadline,
   bid/ask execution, stop/target, slippage stress, and validation gate.
+- `config/opening_ablation.yaml` registers the Phase-5 diagnostic variants,
+  month-cluster bootstrap, and minimum interpretable event count.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
 - Date ranges use a half-open interval: `start` is included and `end` is
@@ -188,3 +202,5 @@ To validate the active development configuration without downloading data:
 - `llm/PHASE3_WRAP_UP.md`
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE4.md`
 - `llm/PHASE4_RESULTS_2024_2025.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE5.md`
+- `llm/PHASE5_RESULTS_2024_2025.md`
