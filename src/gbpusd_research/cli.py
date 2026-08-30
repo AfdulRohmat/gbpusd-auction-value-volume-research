@@ -17,6 +17,7 @@ from gbpusd_research.config import (
     load_fundamental_bias_config,
     load_fundamental_repricing_config,
     load_fundamental_strength_config,
+    load_opening_ablation_config,
     load_opening_value_strategy_config,
     load_project_config,
     load_value_state_config,
@@ -38,6 +39,7 @@ from gbpusd_research.research.phase3 import run_phase3
 from gbpusd_research.research.phase3b import run_phase3b
 from gbpusd_research.research.phase3c import run_phase3c
 from gbpusd_research.research.phase4 import run_phase4
+from gbpusd_research.research.phase5 import run_phase5
 from gbpusd_research.utils.logging import configure_logging
 from gbpusd_research.utils.paths import find_project_root, resolve_within_project
 
@@ -191,6 +193,36 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("config/opening_value_strategy.yaml"),
         help="frozen Phase-4 strategy configuration relative to the project root",
+    )
+
+    phase5 = subparsers.add_parser(
+        "run-phase5",
+        help="run exploratory opening-auction component ablations",
+    )
+    _add_config_arguments(phase5)
+    phase5.add_argument(
+        "--second-research",
+        type=Path,
+        default=Path("config/research_2025.yaml"),
+        help="second evidence configuration relative to the project root",
+    )
+    phase5.add_argument(
+        "--value-state",
+        type=Path,
+        default=Path("config/value_state.yaml"),
+        help="Phase-2 value-state configuration relative to the project root",
+    )
+    phase5.add_argument(
+        "--opening-value",
+        type=Path,
+        default=Path("config/opening_value_strategy.yaml"),
+        help="frozen Phase-4 strategy configuration relative to the project root",
+    )
+    phase5.add_argument(
+        "--ablation",
+        type=Path,
+        default=Path("config/opening_ablation.yaml"),
+        help="Phase-5 ablation configuration relative to the project root",
     )
     return parser
 
@@ -427,6 +459,34 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         except (ValueError, ValidationError) as exc:
             logging.getLogger(__name__).error("Phase-4 run failed: %s", exc)
+            return 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 0
+    if args.command == "run-phase5":
+        try:
+            second_config = load_project_config(
+                _resolve_config_path(project_root, args.second_research),
+                _resolve_config_path(project_root, args.sessions),
+            )
+            value_config = load_value_state_config(
+                _resolve_config_path(project_root, args.value_state)
+            )
+            strategy_config = load_opening_value_strategy_config(
+                _resolve_config_path(project_root, args.opening_value)
+            )
+            ablation_config = load_opening_ablation_config(
+                _resolve_config_path(project_root, args.ablation)
+            )
+            summary = run_phase5(
+                project_root,
+                config,
+                second_config,
+                value_config,
+                strategy_config,
+                ablation_config,
+            )
+        except (ValueError, ValidationError) as exc:
+            logging.getLogger(__name__).error("Phase-5 run failed: %s", exc)
             return 1
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0

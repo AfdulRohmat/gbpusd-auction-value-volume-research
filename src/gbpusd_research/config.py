@@ -350,6 +350,39 @@ class OpeningValueStrategyConfig(StrictModel):
     analysis: OpeningValueAnalysisConfig
 
 
+OpeningAblationVariant = Literal[
+    "open_timeout_30",
+    "open_timeout_60",
+    "open_timeout_90",
+    "open_boundary_90",
+    "open_poc_90",
+    "signal_cohort_open_timeout_90",
+    "confirmed_timeout_all",
+    "confirmed_timeout_favorable",
+    "confirmed_poc_no_stop",
+    "phase4_full",
+]
+
+
+class OpeningAblationAnalysisConfig(StrictModel):
+    variants: tuple[OpeningAblationVariant, ...]
+    bootstrap_resamples: int = Field(ge=100)
+    confidence_level: float = Field(gt=0, lt=1)
+    minimum_events_for_interpretation: int = Field(ge=2)
+
+    @model_validator(mode="after")
+    def validate_variants(self) -> OpeningAblationAnalysisConfig:
+        if not self.variants:
+            raise ValueError("Phase-5 ablation variants must not be empty")
+        if len(set(self.variants)) != len(self.variants):
+            raise ValueError("Phase-5 ablation variants must be unique")
+        return self
+
+
+class OpeningAblationConfig(StrictModel):
+    analysis: OpeningAblationAnalysisConfig
+
+
 def _read_yaml(path: Path) -> object:
     try:
         with path.open(encoding="utf-8") as stream:
@@ -401,3 +434,9 @@ def load_opening_value_strategy_config(path: Path) -> OpeningValueStrategyConfig
     """Load and strictly validate Phase-4 opening-value strategy configuration."""
 
     return OpeningValueStrategyConfig.model_validate(_read_yaml(path))
+
+
+def load_opening_ablation_config(path: Path) -> OpeningAblationConfig:
+    """Load and strictly validate the Phase-5 ablation configuration."""
+
+    return OpeningAblationConfig.model_validate(_read_yaml(path))
