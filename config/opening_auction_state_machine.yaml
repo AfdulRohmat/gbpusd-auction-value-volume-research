@@ -1,0 +1,24 @@
+classification:
+  observation_minutes: 15
+  imbalance_efficiency_threshold: 0.60
+  extreme_close_fraction: 0.70
+
+execution:
+  stop_buffer_pips: 1.0
+  target_r_multiple: 2.0
+  slippage_per_side_pips: 0.1
+  intrabar_priority: stop_first
+  london_cutoff: new_york_open
+  new_york_cutoff: fx_day_boundary
+
+trailing:
+  break_even_trigger_r: 1.0
+  swing_bars: 3
+  buffer_pips: 0.0
+
+analysis:
+  variants: [fixed_2r, session_hold, trailing_session]
+  bootstrap_resamples: 10000
+  confidence_level: 0.95
+  minimum_events_for_interpretation: 30
+  benchmark_expectancy_r: 0.10
