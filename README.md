@@ -13,7 +13,9 @@ opening-only previous-value reversion with 2024 development context and an
 untouched 2025 validation sample. Phase 5 performs a post-validation component
 ablation on the now-development-only 2024–2025 evidence. Phase 6 tests a
 coverage-first, price-only 15-minute opening-auction state machine with fixed
-2R, session-hold, and trailing exits.
+2R, session-hold, and trailing exits. Phase 7 steps away from trading and maps
+continuous 30-minute balance/imbalance episodes, their duration, transition
+signatures, and opening-session controls across 2024–2025.
 
 ## Requirements
 
@@ -147,6 +149,15 @@ Run the exploratory Phase-6 opening-auction state machine:
   --opening-auction config/opening_auction_state_machine.yaml
 ```
 
+Run the non-trading Phase-7 auction-state taxonomy:
+
+```bash
+.venv/bin/python -m gbpusd_research run-phase7 \
+  --research config/research_2024.yaml \
+  --second-research config/research_2025.yaml \
+  --taxonomy config/auction_state_taxonomy.yaml
+```
+
 The range downloader retries failed requests and continues with later months.
 Re-running it validates and reuses archives already present in the cache.
 
@@ -184,6 +195,9 @@ Run tests and static checks:
 - `config/opening_auction_state_machine.yaml` freezes the Phase-6 15-minute
   balance/imbalance classifier, structural risk, session cutoffs, three exit
   variants, and descriptive expectancy benchmark.
+- `config/auction_state_taxonomy.yaml` freezes the Phase-7 continuous
+  balance/imbalance geometry, independent activity regimes, confirmation,
+  duration, transition, and opening/control analysis.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
 - Date ranges use a half-open interval: `start` is included and `end` is
@@ -221,3 +235,5 @@ To validate the active development configuration without downloading data:
 - `llm/PHASE5_RESULTS_2024_2025.md`
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE6.md`
 - `llm/PHASE6_RESULTS_2024_2025.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE7.md`
+- `llm/PHASE7_RESULTS_2024_2025.md`

@@ -442,6 +442,81 @@ class OpeningAuctionConfig(StrictModel):
     analysis: OpeningAuctionAnalysisConfig
 
 
+class AuctionTaxonomyStateConfig(StrictModel):
+    window_minutes: int = Field(gt=0)
+    balance_max_efficiency: float = Field(ge=0, lt=1)
+    balance_min_overlap: float = Field(gt=0, le=1)
+    balance_min_midpoint_crossings: int = Field(ge=1)
+    imbalance_min_efficiency: float = Field(gt=0, le=1)
+    imbalance_min_directional_persistence: float = Field(gt=0, le=1)
+    extreme_close_fraction: float = Field(gt=0.5, lt=1)
+    confirmation_windows: int = Field(ge=2)
+
+    @model_validator(mode="after")
+    def validate_state_thresholds(self) -> AuctionTaxonomyStateConfig:
+        if self.window_minutes % 5:
+            raise ValueError("taxonomy.state.window_minutes must be M5-aligned")
+        if self.balance_max_efficiency >= self.imbalance_min_efficiency:
+            raise ValueError(
+                "balance efficiency threshold must be below imbalance threshold"
+            )
+        return self
+
+
+class AuctionTaxonomyActivityConfig(StrictModel):
+    baseline_bars: int = Field(ge=12)
+    minimum_baseline_bars: int = Field(ge=6)
+    quiet_ratio_max: float = Field(gt=0, lt=1)
+    active_ratio_min: float = Field(gt=1)
+
+    @model_validator(mode="after")
+    def validate_activity_baseline(self) -> AuctionTaxonomyActivityConfig:
+        if self.minimum_baseline_bars > self.baseline_bars:
+            raise ValueError("minimum activity baseline cannot exceed baseline_bars")
+        return self
+
+
+class AuctionTaxonomyTransitionConfig(StrictModel):
+    boundary_test_tolerance_pips: float = Field(gt=0)
+    activity_burst_ratio: float = Field(gt=1)
+    opening_window_minutes: int = Field(gt=0)
+    horizons_minutes: tuple[int, ...]
+    balance_age_bins_minutes: tuple[int, ...]
+
+    @model_validator(mode="after")
+    def validate_transition_windows(self) -> AuctionTaxonomyTransitionConfig:
+        horizons = self.horizons_minutes
+        if not horizons or any(value <= 0 or value % 5 for value in horizons):
+            raise ValueError("transition horizons must be positive and M5-aligned")
+        if tuple(sorted(set(horizons))) != horizons:
+            raise ValueError("transition horizons must be sorted and unique")
+        bins = self.balance_age_bins_minutes
+        if not bins or bins[0] != 0 or any(value < 0 for value in bins):
+            raise ValueError("balance age bins must start at zero")
+        if tuple(sorted(set(bins))) != bins:
+            raise ValueError("balance age bins must be sorted and unique")
+        return self
+
+
+class AuctionTaxonomyAnalysisConfig(StrictModel):
+    controls: tuple[Literal["fixed", "matched"], ...]
+    minimum_episodes_for_interpretation: int = Field(ge=2)
+    confidence_level: float = Field(gt=0, lt=1)
+
+    @model_validator(mode="after")
+    def validate_controls(self) -> AuctionTaxonomyAnalysisConfig:
+        if set(self.controls) != {"fixed", "matched"} or len(self.controls) != 2:
+            raise ValueError("Phase-7 controls must contain fixed and matched once")
+        return self
+
+
+class AuctionTaxonomyConfig(StrictModel):
+    state: AuctionTaxonomyStateConfig
+    activity: AuctionTaxonomyActivityConfig
+    transition: AuctionTaxonomyTransitionConfig
+    analysis: AuctionTaxonomyAnalysisConfig
+
+
 def _read_yaml(path: Path) -> object:
     try:
         with path.open(encoding="utf-8") as stream:
@@ -505,3 +580,9 @@ def load_opening_auction_config(path: Path) -> OpeningAuctionConfig:
     """Load and strictly validate the Phase-6 state-machine configuration."""
 
     return OpeningAuctionConfig.model_validate(_read_yaml(path))
+
+
+def load_auction_taxonomy_config(path: Path) -> AuctionTaxonomyConfig:
+    """Load and strictly validate the Phase-7 taxonomy configuration."""
+
+    return AuctionTaxonomyConfig.model_validate(_read_yaml(path))
