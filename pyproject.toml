@@ -3,9 +3,9 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gbpusd-session-research"
+name = "gbpusd-auction-value-volume-research"
 version = "0.1.0"
-description = "GBPUSD session-opening event research pipeline"
+description = "GBPUSD auction, value, volume, and fundamental research pipeline"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
@@ -42,4 +42,3 @@ line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
-

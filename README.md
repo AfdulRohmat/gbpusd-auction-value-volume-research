@@ -1,7 +1,8 @@
-# GBPUSD Session Research
+# GBPUSD Auction, Value, and Volume Research
 
-Reproducible research pipeline for testing whether GBPUSD movement around the
-London and New York FX opens differs from matched non-opening periods.
+Reproducible GBPUSD research pipeline covering London/New York opening behavior,
+auction balance/imbalance, VWAP and volume-profile proxies, point-in-time
+fundamental context, and cost-aware strategy validation.
 
 The current implementation covers Phase 1 session-opening research, Phase 2
 point-in-time VWAP/previous-value-state research, Phase 3 point-in-time

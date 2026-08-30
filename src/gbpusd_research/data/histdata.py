@@ -86,7 +86,7 @@ def download_month(
         )
 
     page_url = download_page_url(symbol, year, month)
-    headers = {"User-Agent": "gbpusd-session-research/0.1"}
+    headers = {"User-Agent": "gbpusd-auction-value-volume-research/0.1"}
     timeout = httpx.Timeout(timeout_seconds, connect=min(timeout_seconds, 15))
     transport = httpx.HTTPTransport(retries=3)
     destination.parent.mkdir(parents=True, exist_ok=True)
