@@ -1,7 +1,7 @@
 # Technical Plan — GBPUSD Exness Quote-Activity Phase 9
 
 **Status:** Frozen before receiving or inspecting Exness data
-**Branch:** `phase/09-exness-quote-activity-final`
+**Branch:** `phase/09-exness-quote-activity`
 **Instrument/account:** GBPUSD, Exness Raw Spread, MetaTrader 5
 **Authority:** final research iteration; no live-trading authorization
 
