@@ -43,6 +43,9 @@ def test_m5_boundaries_and_ohlc() -> None:
     assert bars.loc[0, "mid_squared_activity_sum"] == pytest.approx(
         1.2701**2 + 1.27115**2
     )
+    assert bars.loc[0, "up_quote_count"] == 1
+    assert bars.loc[0, "down_quote_count"] == 0
+    assert bars.loc[1, "down_quote_count"] == 1
 
 
 def test_tick_and_bar_quality() -> None:

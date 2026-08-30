@@ -171,6 +171,19 @@ Run the exploratory Phase-8 balance-boundary strategy:
   --balance-boundary config/balance_boundary_strategy.yaml
 ```
 
+Phase 9 is the final registered experiment. It tests whether Exness Raw Spread
+GBPUSD quote activity adds out-of-sample value beyond a price-only baseline.
+Its design is frozen in `llm/TECHNICAL_PLAN_GBPUSD_PHASE9.md`; execution awaits
+the account-aligned Exness/MT5 tick files described in
+`llm/PHASE9_DATA_PREPARATION.md`.
+
+Inspect and stream the supplied archives without extracting their large CSVs:
+
+```bash
+.venv/bin/python -m gbpusd_research inspect-exness
+.venv/bin/python -m gbpusd_research build-exness-m5
+```
+
 The range downloader retries failed requests and continues with later months.
 Re-running it validates and reuses archives already present in the cache.
 
@@ -214,6 +227,9 @@ Run tests and static checks:
 - `config/balance_boundary_strategy.yaml` freezes the Phase-8 opening balance
   context, rejection/acceptance triggers, quote-side execution, exits, and
   interpretation thresholds.
+- `config/exness_quote_activity.yaml` freezes the Phase-9 Exness source,
+  development/replication/forward periods, features, models, broker costs,
+  exits, and final repository decision gate.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
 - Date ranges use a half-open interval: `start` is included and `end` is
@@ -255,3 +271,5 @@ To validate the active development configuration without downloading data:
 - `llm/PHASE7_RESULTS_2024_2025.md`
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE8.md`
 - `llm/PHASE8_RESULTS_2024_2025.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE9.md`
+- `llm/PHASE9_DATA_PREPARATION.md`

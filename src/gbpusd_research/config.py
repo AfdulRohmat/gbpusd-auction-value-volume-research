@@ -598,6 +598,135 @@ class BalanceBoundaryStrategyConfig(StrictModel):
     analysis: BalanceBoundaryAnalysisConfig
 
 
+ExnessSourcePreference = Literal["mt5_account_export", "personal_area_archive"]
+ExnessModelVariant = Literal["price_only", "activity_only", "price_activity"]
+
+
+class ExnessQuoteDataConfig(StrictModel):
+    input_path: Path
+    processed_path: Path
+    source_preference: ExnessSourcePreference
+    source_timezone: Literal["UTC"]
+    accepted_symbols: tuple[str, ...]
+    pip_size: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_symbols(self) -> ExnessQuoteDataConfig:
+        if not self.accepted_symbols or any(
+            not symbol.strip() for symbol in self.accepted_symbols
+        ):
+            raise ValueError("accepted_symbols must contain non-blank symbols")
+        if len(set(self.accepted_symbols)) != len(self.accepted_symbols):
+            raise ValueError("accepted_symbols must be unique")
+        return self
+
+
+class ExnessEvidencePeriodsConfig(StrictModel):
+    development_start: date
+    development_end: date
+    replication_start: date
+    replication_end: date
+    forward_start: date
+    forward_end: date
+
+    @model_validator(mode="after")
+    def validate_periods(self) -> ExnessEvidencePeriodsConfig:
+        intervals = (
+            (self.development_start, self.development_end),
+            (self.replication_start, self.replication_end),
+            (self.forward_start, self.forward_end),
+        )
+        if any(start >= end for start, end in intervals):
+            raise ValueError("Each Phase-9 evidence period must have positive length")
+        if self.development_end != self.replication_start:
+            raise ValueError("development_end must equal replication_start")
+        if self.replication_end != self.forward_start:
+            raise ValueError("replication_end must equal forward_start")
+        return self
+
+
+class ExnessQuoteFeaturesConfig(StrictModel):
+    observation_minutes: int = Field(gt=0)
+    activity_baseline_minutes: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_windows(self) -> ExnessQuoteFeaturesConfig:
+        if self.observation_minutes % 5 or self.activity_baseline_minutes % 5:
+            raise ValueError("Phase-9 feature windows must be M5-aligned")
+        if self.activity_baseline_minutes <= self.observation_minutes:
+            raise ValueError("activity baseline must exceed observation window")
+        return self
+
+
+class ExnessQuoteModelConfig(StrictModel):
+    l2_penalty: float = Field(gt=0)
+    decision_threshold: float = Field(gt=0, lt=1)
+    variants: tuple[ExnessModelVariant, ...]
+
+    @model_validator(mode="after")
+    def validate_variants(self) -> ExnessQuoteModelConfig:
+        required = {"price_only", "activity_only", "price_activity"}
+        if set(self.variants) != required or len(self.variants) != len(required):
+            raise ValueError("Phase-9 model variants must match the frozen set")
+        return self
+
+
+class ExnessQuoteExecutionConfig(StrictModel):
+    stop_buffer_pips: float = Field(gt=0)
+    minimum_risk_pips: float = Field(gt=0)
+    maximum_risk_pips: float = Field(gt=0)
+    target_r_multiple: float = Field(gt=0)
+    slippage_per_side_pips: float = Field(ge=0)
+    commission_usd_per_lot_per_side: float = Field(ge=0)
+    usd_per_pip_per_standard_lot: float = Field(gt=0)
+    intrabar_priority: Literal["stop_first"]
+    london_cutoff: Literal["new_york_open"]
+    new_york_cutoff: Literal["fx_day_boundary"]
+
+    @model_validator(mode="after")
+    def validate_risk(self) -> ExnessQuoteExecutionConfig:
+        if self.maximum_risk_pips <= self.minimum_risk_pips:
+            raise ValueError("maximum_risk_pips must exceed minimum_risk_pips")
+        return self
+
+    @property
+    def commission_pips_per_side(self) -> float:
+        return (
+            self.commission_usd_per_lot_per_side
+            / self.usd_per_pip_per_standard_lot
+        )
+
+
+class ExnessQuoteTrailingConfig(StrictModel):
+    break_even_trigger_r: float = Field(gt=0)
+    swing_bars: int = Field(ge=1)
+    buffer_pips: float = Field(ge=0)
+
+
+class ExnessQuoteGateConfig(StrictModel):
+    minimum_auc: float = Field(gt=0.5, le=1)
+    minimum_auc_improvement: float = Field(gt=0)
+    minimum_log_loss_improvement: float = Field(gt=0)
+    minimum_trades_per_month: float = Field(gt=0)
+    minimum_expectancy_r: float = Field(ge=0)
+    minimum_profit_factor: float = Field(gt=1)
+    minimum_expectancy_improvement_r: float = Field(gt=0)
+    require_positive_cluster_ci_lower: bool
+    bootstrap_resamples: int = Field(ge=100)
+    confidence_level: float = Field(gt=0, lt=1)
+    random_seed: int = Field(ge=0)
+
+
+class ExnessQuoteActivityConfig(StrictModel):
+    data: ExnessQuoteDataConfig
+    periods: ExnessEvidencePeriodsConfig
+    features: ExnessQuoteFeaturesConfig
+    model: ExnessQuoteModelConfig
+    execution: ExnessQuoteExecutionConfig
+    trailing: ExnessQuoteTrailingConfig
+    gate: ExnessQuoteGateConfig
+
+
 def _read_yaml(path: Path) -> object:
     try:
         with path.open(encoding="utf-8") as stream:
@@ -675,3 +804,9 @@ def load_balance_boundary_strategy_config(
     """Load and strictly validate the Phase-8 boundary-strategy configuration."""
 
     return BalanceBoundaryStrategyConfig.model_validate(_read_yaml(path))
+
+
+def load_exness_quote_activity_config(path: Path) -> ExnessQuoteActivityConfig:
+    """Load and strictly validate the frozen Phase-9 configuration."""
+
+    return ExnessQuoteActivityConfig.model_validate(_read_yaml(path))

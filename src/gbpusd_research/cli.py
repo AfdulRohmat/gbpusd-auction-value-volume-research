@@ -19,6 +19,7 @@ matplotlib.use("Agg")
 from gbpusd_research.config import (
     load_auction_taxonomy_config,
     load_balance_boundary_strategy_config,
+    load_exness_quote_activity_config,
     load_fundamental_bias_config,
     load_fundamental_repricing_config,
     load_fundamental_strength_config,
@@ -27,6 +28,12 @@ from gbpusd_research.config import (
     load_opening_value_strategy_config,
     load_project_config,
     load_value_state_config,
+)
+from gbpusd_research.data.exness import (
+    ExnessDataError,
+    build_exness_m5,
+    discover_tick_sources,
+    inspect_tick_sources,
 )
 from gbpusd_research.data.histdata import (
     HistDataError,
@@ -299,11 +306,58 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("config/balance_boundary_strategy.yaml"),
         help="Phase-8 balance-boundary configuration relative to the project root",
     )
+
+    inspect_exness = subparsers.add_parser(
+        "inspect-exness",
+        help="inspect Exness Personal Area or MT5 tick files without extracting ZIPs",
+    )
+    _add_config_arguments(inspect_exness)
+    inspect_exness.add_argument(
+        "--phase9",
+        type=Path,
+        default=Path("config/exness_quote_activity.yaml"),
+        help="frozen Phase-9 configuration relative to the project root",
+    )
+    inspect_exness.add_argument(
+        "--source",
+        type=Path,
+        nargs="*",
+        help="source CSV/ZIP paths; defaults to the configured input directory",
+    )
+
+    build_exness = subparsers.add_parser(
+        "build-exness-m5",
+        help="stream Exness/MT5 tick files into monthly activity-aware M5 files",
+    )
+    _add_config_arguments(build_exness)
+    build_exness.add_argument(
+        "--phase9",
+        type=Path,
+        default=Path("config/exness_quote_activity.yaml"),
+        help="frozen Phase-9 configuration relative to the project root",
+    )
+    build_exness.add_argument(
+        "--source",
+        type=Path,
+        nargs="*",
+        help="source CSV/ZIP paths; defaults to the configured input directory",
+    )
+    build_exness.add_argument("--chunksize", type=int, default=500_000)
+    build_exness.add_argument("--force", action="store_true")
     return parser
 
 
 def _resolve_config_path(project_root: Path, path: Path) -> Path:
     return path if path.is_absolute() else project_root / path
+
+
+def _resolve_exness_sources(
+    project_root: Path, configured_input: Path, supplied: Sequence[Path] | None
+) -> list[Path]:
+    if supplied:
+        return [resolve_within_project(project_root, path) for path in supplied]
+    input_path = resolve_within_project(project_root, configured_input)
+    return discover_tick_sources(input_path)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -326,6 +380,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "show-config":
         print(json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True))
+        return 0
+    if args.command in {"inspect-exness", "build-exness-m5"}:
+        try:
+            exness_config = load_exness_quote_activity_config(
+                _resolve_config_path(project_root, args.phase9)
+            )
+            sources = _resolve_exness_sources(
+                project_root, exness_config.data.input_path, args.source
+            )
+            if args.command == "inspect-exness":
+                summary = inspect_tick_sources(sources)
+            else:
+                summary = build_exness_m5(
+                    project_root,
+                    exness_config,
+                    sources,
+                    chunksize=args.chunksize,
+                    force=args.force,
+                )
+        except (ExnessDataError, OSError, ValueError, ValidationError) as exc:
+            logging.getLogger(__name__).error("Exness data command failed: %s", exc)
+            return 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
         return 0
     if args.command == "download":
         research = config.research

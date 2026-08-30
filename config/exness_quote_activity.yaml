@@ -1,0 +1,54 @@
+data:
+  input_path: data/raw/exness
+  processed_path: data/processed/exness
+  source_preference: mt5_account_export
+  source_timezone: UTC
+  accepted_symbols: [GBPUSD, GBPUSD-r]
+  pip_size: 0.0001
+
+periods:
+  development_start: "2024-01-01"
+  development_end: "2025-01-01"
+  replication_start: "2025-01-01"
+  replication_end: "2026-01-01"
+  forward_start: "2026-01-01"
+  forward_end: "2026-08-01"
+
+features:
+  observation_minutes: 15
+  activity_baseline_minutes: 60
+
+model:
+  l2_penalty: 1.0
+  decision_threshold: 0.5
+  variants: [price_only, activity_only, price_activity]
+
+execution:
+  stop_buffer_pips: 1.0
+  minimum_risk_pips: 5.0
+  maximum_risk_pips: 30.0
+  target_r_multiple: 2.0
+  slippage_per_side_pips: 0.1
+  commission_usd_per_lot_per_side: 3.5
+  usd_per_pip_per_standard_lot: 10.0
+  intrabar_priority: stop_first
+  london_cutoff: new_york_open
+  new_york_cutoff: fx_day_boundary
+
+trailing:
+  break_even_trigger_r: 1.0
+  swing_bars: 3
+  buffer_pips: 1.0
+
+gate:
+  minimum_auc: 0.53
+  minimum_auc_improvement: 0.01
+  minimum_log_loss_improvement: 0.005
+  minimum_trades_per_month: 20.0
+  minimum_expectancy_r: 0.0
+  minimum_profit_factor: 1.05
+  minimum_expectancy_improvement_r: 0.05
+  require_positive_cluster_ci_lower: true
+  bootstrap_resamples: 10000
+  confidence_level: 0.95
+  random_seed: 20240801

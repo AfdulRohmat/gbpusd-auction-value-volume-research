@@ -7,6 +7,7 @@ from gbpusd_research.config import (
     ResearchConfig,
     load_auction_taxonomy_config,
     load_balance_boundary_strategy_config,
+    load_exness_quote_activity_config,
     load_fundamental_bias_config,
     load_fundamental_repricing_config,
     load_fundamental_strength_config,
@@ -124,6 +125,25 @@ def test_checked_in_balance_boundary_configuration_is_valid() -> None:
         "combined_fixed_2r",
         "combined_trailing_session",
     }
+
+
+def test_checked_in_exness_quote_activity_configuration_is_valid() -> None:
+    config = load_exness_quote_activity_config(
+        PROJECT_ROOT / "config/exness_quote_activity.yaml"
+    )
+
+    assert config.data.source_preference == "mt5_account_export"
+    assert config.data.accepted_symbols == ("GBPUSD", "GBPUSD-r")
+    assert config.periods.development_start.isoformat() == "2024-01-01"
+    assert config.periods.forward_end.isoformat() == "2026-08-01"
+    assert config.features.observation_minutes == 15
+    assert set(config.model.variants) == {
+        "price_only",
+        "activity_only",
+        "price_activity",
+    }
+    assert config.execution.commission_pips_per_side == pytest.approx(0.35)
+    assert config.gate.minimum_auc == 0.53
 
 
 def test_research_config_rejects_unknown_keys() -> None:
