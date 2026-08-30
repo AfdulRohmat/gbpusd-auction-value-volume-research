@@ -1,0 +1,20 @@
+execution:
+  entry_deadline_minutes: 30
+  timeout_minutes: 90
+  stop_buffer_pips: 1.0
+  slippage_per_side_pips: 0.1
+  stress_slippage_per_side_pips: 0.5
+  intrabar_priority: stop_first
+
+analysis:
+  primary_session: new_york
+  replication_session: london
+  bootstrap_resamples: 10000
+  confidence_level: 0.95
+  minimum_value_feature_coverage_ratio: 0.95
+  minimum_trades: 30
+  minimum_trades_per_direction: 10
+  minimum_active_months: 9
+  minimum_expectancy_r: 0.10
+  minimum_profit_factor: 1.20
+  maximum_drawdown_r: 10.0

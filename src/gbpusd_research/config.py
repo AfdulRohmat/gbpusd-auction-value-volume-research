@@ -306,6 +306,50 @@ class FundamentalRepricingConfig(StrictModel):
     analysis: FundamentalRepricingAnalysisConfig
 
 
+class OpeningValueExecutionConfig(StrictModel):
+    entry_deadline_minutes: int = Field(ge=5)
+    timeout_minutes: int = Field(gt=0)
+    stop_buffer_pips: float = Field(gt=0)
+    slippage_per_side_pips: float = Field(ge=0)
+    stress_slippage_per_side_pips: float = Field(ge=0)
+    intrabar_priority: Literal["stop_first"]
+
+    @model_validator(mode="after")
+    def validate_execution(self) -> OpeningValueExecutionConfig:
+        if self.entry_deadline_minutes % 5 or self.timeout_minutes % 5:
+            raise ValueError("Phase-4 execution minutes must be M5-aligned")
+        if self.entry_deadline_minutes >= self.timeout_minutes:
+            raise ValueError("entry deadline must precede the hard timeout")
+        if self.stress_slippage_per_side_pips < self.slippage_per_side_pips:
+            raise ValueError("stress slippage must not be below primary slippage")
+        return self
+
+
+class OpeningValueAnalysisConfig(StrictModel):
+    primary_session: Literal["new_york"]
+    replication_session: Literal["london"]
+    bootstrap_resamples: int = Field(ge=100)
+    confidence_level: float = Field(gt=0, lt=1)
+    minimum_value_feature_coverage_ratio: float = Field(gt=0, le=1)
+    minimum_trades: int = Field(ge=2)
+    minimum_trades_per_direction: int = Field(ge=1)
+    minimum_active_months: int = Field(ge=1, le=12)
+    minimum_expectancy_r: float = Field(gt=0)
+    minimum_profit_factor: float = Field(gt=1)
+    maximum_drawdown_r: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_counts(self) -> OpeningValueAnalysisConfig:
+        if self.minimum_trades < 2 * self.minimum_trades_per_direction:
+            raise ValueError("minimum trades must cover both direction minima")
+        return self
+
+
+class OpeningValueStrategyConfig(StrictModel):
+    execution: OpeningValueExecutionConfig
+    analysis: OpeningValueAnalysisConfig
+
+
 def _read_yaml(path: Path) -> object:
     try:
         with path.open(encoding="utf-8") as stream:
@@ -351,3 +395,9 @@ def load_fundamental_repricing_config(path: Path) -> FundamentalRepricingConfig:
     """Load and strictly validate Phase-3C repricing configuration."""
 
     return FundamentalRepricingConfig.model_validate(_read_yaml(path))
+
+
+def load_opening_value_strategy_config(path: Path) -> OpeningValueStrategyConfig:
+    """Load and strictly validate Phase-4 opening-value strategy configuration."""
+
+    return OpeningValueStrategyConfig.model_validate(_read_yaml(path))

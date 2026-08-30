@@ -8,8 +8,9 @@ point-in-time VWAP/previous-value-state research, Phase 3 point-in-time
 monetary-policy bias research, and the Phase 3B GBP-minus-USD relative
 fundamental-strength extension. Phase 3C adds a zero-cost market-implied
 surprise proxy from event-day two-year yield repricing and tests future
-same-session opens. Trading signals and P&L simulation remain intentionally
-deferred until the research gates are reviewed.
+same-session opens. Phase 4 adds the first frozen, cost-aware P&L simulation:
+opening-only previous-value reversion with 2024 development context and an
+untouched 2025 validation sample.
 
 ## Requirements
 
@@ -103,6 +104,25 @@ Run the separately registered Phase-3C market-implied repricing study:
   --fundamental-repricing config/fundamental_repricing.yaml
 ```
 
+Build the zero-cost 2025 validation data and run the frozen Phase-4 strategy:
+
+```bash
+.venv/bin/python -m gbpusd_research download-range \
+  --research config/research_2025.yaml
+.venv/bin/python -m gbpusd_research build-range \
+  --research config/research_2025.yaml
+.venv/bin/python -m gbpusd_research run-phase1 \
+  --research config/research_2025.yaml
+.venv/bin/python -m gbpusd_research run-phase2 \
+  --research config/research_2025.yaml \
+  --value-state config/value_state.yaml
+.venv/bin/python -m gbpusd_research run-phase4 \
+  --research config/research_2024.yaml \
+  --validation-research config/research_2025.yaml \
+  --value-state config/value_state.yaml \
+  --opening-value config/opening_value_strategy.yaml
+```
+
 The range downloader retries failed requests and continues with later months.
 Re-running it validates and reuses archives already present in the cache.
 
@@ -119,6 +139,8 @@ Run tests and static checks:
   settings for the January 2024 smoke test.
 - `config/research_2024.yaml` is the active development specification covering
   `[2024-01-01, 2025-01-01)`.
+- `config/research_2025.yaml` is the untouched Phase-4 validation specification
+  covering `[2025-01-01, 2026-01-01)`.
 - `config/research_2023_2024.yaml` is retained for audit of the rejected
   two-year run; incomplete New York coverage makes 2023 unsuitable.
 - `config/sessions.yaml` contains timezone-aware session and control settings.
@@ -131,6 +153,8 @@ Run tests and static checks:
 - `config/fundamental_repricing.yaml` freezes the Phase-3C event-day 2Y shock,
   five-observation signal lifetime, five-basis-point bias threshold,
   same-session horizons, cluster bootstrap, and development gate.
+- `config/opening_value_strategy.yaml` freezes the Phase-4 entry deadline,
+  bid/ask execution, stop/target, slippage stress, and validation gate.
 - Fixed controls are registered at 04:00 London local time and 12:00 New York
   local time. Matched controls use deterministic sampling away from both opens.
 - Date ranges use a half-open interval: `start` is included and `end` is
@@ -162,3 +186,5 @@ To validate the active development configuration without downloading data:
 - `llm/TECHNICAL_PLAN_GBPUSD_PHASE3C.md`
 - `llm/PHASE3C_RESULTS_2024.md`
 - `llm/PHASE3_WRAP_UP.md`
+- `llm/TECHNICAL_PLAN_GBPUSD_PHASE4.md`
+- `llm/PHASE4_RESULTS_2024_2025.md`
