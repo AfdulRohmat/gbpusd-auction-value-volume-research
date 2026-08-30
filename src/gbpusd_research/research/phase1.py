@@ -38,6 +38,17 @@ def _hash_text(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
+def phase1_run_id(config: ProjectConfig) -> str:
+    """Return the deterministic report identifier for a Phase-1 configuration."""
+
+    research = config.research
+    config_json = json.dumps(config.model_dump(mode="json"), sort_keys=True)
+    return (
+        f"{research.data.start:%Y%m%d}_{research.data.end:%Y%m%d}_"
+        f"{_hash_text(config_json)[:8]}"
+    )
+
+
 def _git_commit(project_root: Path) -> str | None:
     result = subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -245,7 +256,7 @@ def run_phase1(project_root: Path, config: ProjectConfig) -> dict[str, Any]:
     )
 
     config_json = json.dumps(config.model_dump(mode="json"), sort_keys=True)
-    run_id = f"{start:%Y%m%d}_{end:%Y%m%d}_{_hash_text(config_json)[:8]}"
+    run_id = phase1_run_id(config)
     processed_root = resolve_within_project(project_root, research.data.paths.processed)
     output = processed_root / "reports" / "phase1" / run_id
     figures = output / "figures"
