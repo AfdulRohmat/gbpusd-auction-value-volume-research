@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from gbpusd_research.config import (
     ResearchConfig,
+    load_auction_taxonomy_config,
     load_fundamental_bias_config,
     load_fundamental_repricing_config,
     load_fundamental_strength_config,
@@ -95,6 +96,18 @@ def test_checked_in_opening_auction_configuration_is_valid() -> None:
         "session_hold",
         "trailing_session",
     }
+
+
+def test_checked_in_auction_taxonomy_configuration_is_valid() -> None:
+    config = load_auction_taxonomy_config(
+        PROJECT_ROOT / "config/auction_state_taxonomy.yaml"
+    )
+
+    assert config.state.window_minutes == 30
+    assert config.state.confirmation_windows == 2
+    assert config.activity.baseline_bars == 72
+    assert config.transition.horizons_minutes == (15, 30, 60, 90)
+    assert set(config.analysis.controls) == {"fixed", "matched"}
 
 
 def test_research_config_rejects_unknown_keys() -> None:

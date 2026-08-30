@@ -1,0 +1,27 @@
+state:
+  window_minutes: 30
+  balance_max_efficiency: 0.35
+  balance_min_overlap: 0.50
+  balance_min_midpoint_crossings: 1
+  imbalance_min_efficiency: 0.65
+  imbalance_min_directional_persistence: 0.67
+  extreme_close_fraction: 0.70
+  confirmation_windows: 2
+
+activity:
+  baseline_bars: 72
+  minimum_baseline_bars: 36
+  quiet_ratio_max: 0.75
+  active_ratio_min: 1.50
+
+transition:
+  boundary_test_tolerance_pips: 1.0
+  activity_burst_ratio: 1.50
+  opening_window_minutes: 60
+  horizons_minutes: [15, 30, 60, 90]
+  balance_age_bins_minutes: [0, 30, 60, 120, 240, 480]
+
+analysis:
+  controls: [fixed, matched]
+  minimum_episodes_for_interpretation: 30
+  confidence_level: 0.95

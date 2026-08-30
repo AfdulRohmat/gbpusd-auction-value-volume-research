@@ -17,6 +17,7 @@ from pydantic import ValidationError
 matplotlib.use("Agg")
 
 from gbpusd_research.config import (
+    load_auction_taxonomy_config,
     load_fundamental_bias_config,
     load_fundamental_repricing_config,
     load_fundamental_strength_config,
@@ -45,6 +46,7 @@ from gbpusd_research.research.phase3c import run_phase3c
 from gbpusd_research.research.phase4 import run_phase4
 from gbpusd_research.research.phase5 import run_phase5
 from gbpusd_research.research.phase6 import run_phase6
+from gbpusd_research.research.phase7 import run_phase7
 from gbpusd_research.utils.logging import configure_logging
 from gbpusd_research.utils.paths import find_project_root, resolve_within_project
 
@@ -252,6 +254,24 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("config/opening_auction_state_machine.yaml"),
         help="Phase-6 state-machine configuration relative to the project root",
+    )
+
+    phase7 = subparsers.add_parser(
+        "run-phase7",
+        help="run the continuous non-trading auction-state taxonomy",
+    )
+    _add_config_arguments(phase7)
+    phase7.add_argument(
+        "--second-research",
+        type=Path,
+        default=Path("config/research_2025.yaml"),
+        help="second evidence configuration relative to the project root",
+    )
+    phase7.add_argument(
+        "--taxonomy",
+        type=Path,
+        default=Path("config/auction_state_taxonomy.yaml"),
+        help="Phase-7 taxonomy configuration relative to the project root",
     )
     return parser
 
@@ -540,6 +560,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         except (ValueError, ValidationError) as exc:
             logging.getLogger(__name__).error("Phase-6 run failed: %s", exc)
+            return 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 0
+    if args.command == "run-phase7":
+        try:
+            second_config = load_project_config(
+                _resolve_config_path(project_root, args.second_research),
+                _resolve_config_path(project_root, args.sessions),
+            )
+            taxonomy_config = load_auction_taxonomy_config(
+                _resolve_config_path(project_root, args.taxonomy)
+            )
+            summary = run_phase7(
+                project_root,
+                config,
+                second_config,
+                taxonomy_config,
+            )
+        except (ValueError, ValidationError) as exc:
+            logging.getLogger(__name__).error("Phase-7 run failed: %s", exc)
             return 1
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0
