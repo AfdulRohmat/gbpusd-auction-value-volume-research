@@ -1,0 +1,30 @@
+context:
+  signal_window_minutes: 90
+  boundary_touch_tolerance_pips: 1.0
+  rejection_close_inside_pips: 0.5
+  acceptance_close_outside_pips: 0.5
+  acceptance_consecutive_closes: 2
+  rejection_raw_states: [balance, transition]
+
+execution:
+  stop_buffer_pips: 1.0
+  minimum_rotation_reward_to_risk: 1.50
+  breakout_target_r_multiple: 2.0
+  slippage_per_side_pips: 0.1
+  intrabar_priority: stop_first
+  london_cutoff: new_york_open
+  new_york_cutoff: fx_day_boundary
+
+trailing:
+  break_even_trigger_r: 1.0
+  swing_bars: 3
+  buffer_pips: 0.0
+
+analysis:
+  setup_variants:
+    [rotation_midpoint, acceptance_fixed_2r, acceptance_trailing_session]
+  portfolio_variants: [combined_fixed_2r, combined_trailing_session]
+  bootstrap_resamples: 10000
+  confidence_level: 0.95
+  minimum_events_for_interpretation: 30
+  benchmark_expectancy_r: 0.10

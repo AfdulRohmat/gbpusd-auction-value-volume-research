@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from gbpusd_research.config import (
     ResearchConfig,
     load_auction_taxonomy_config,
+    load_balance_boundary_strategy_config,
     load_fundamental_bias_config,
     load_fundamental_repricing_config,
     load_fundamental_strength_config,
@@ -108,6 +109,21 @@ def test_checked_in_auction_taxonomy_configuration_is_valid() -> None:
     assert config.activity.baseline_bars == 72
     assert config.transition.horizons_minutes == (15, 30, 60, 90)
     assert set(config.analysis.controls) == {"fixed", "matched"}
+
+
+def test_checked_in_balance_boundary_configuration_is_valid() -> None:
+    config = load_balance_boundary_strategy_config(
+        PROJECT_ROOT / "config/balance_boundary_strategy.yaml"
+    )
+
+    assert config.context.signal_window_minutes == 90
+    assert config.context.acceptance_consecutive_closes == 2
+    assert config.execution.minimum_rotation_reward_to_risk == 1.5
+    assert config.execution.breakout_target_r_multiple == 2.0
+    assert set(config.analysis.portfolio_variants) == {
+        "combined_fixed_2r",
+        "combined_trailing_session",
+    }
 
 
 def test_research_config_rejects_unknown_keys() -> None:
