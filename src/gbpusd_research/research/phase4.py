@@ -41,6 +41,19 @@ def _hash_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _artifact_records(output: Path) -> list[dict[str, str]]:
+    """Hash generated artifacts without creating a self-referential manifest."""
+
+    return [
+        {
+            "path": str(path.relative_to(output)),
+            "sha256": _hash_file(path),
+        }
+        for path in sorted(output.rglob("*"))
+        if path.is_file() and path.name != "run_manifest.json"
+    ]
+
+
 def _write_json(content: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(content, indent=2, sort_keys=True), encoding="utf-8")
 
@@ -754,9 +767,6 @@ def run_phase4(
     report = _render_report(statistics, gate, development, validation)
     (output / "report.md").write_text(report, encoding="utf-8")
 
-    artifacts = sorted(
-        path for path in output.rglob("*") if path.is_file()
-    )
     combined_config = {
         "development": development.model_dump(mode="json"),
         "validation": validation.model_dump(mode="json"),
@@ -790,13 +800,7 @@ def run_phase4(
             "monthly_statistics": len(monthly),
             "exclusion_statistics": len(exclusions),
         },
-        "artifacts": [
-            {
-                "path": str(path.relative_to(output)),
-                "sha256": _hash_file(path),
-            }
-            for path in artifacts
-        ],
+        "artifacts": _artifact_records(output),
         "figures": [str(path.relative_to(output)) for path in figures],
     }
     _write_json(manifest, output / "run_manifest.json")

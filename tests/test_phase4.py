@@ -4,6 +4,7 @@ import pandas as pd
 
 from gbpusd_research.config import load_opening_value_strategy_config
 from gbpusd_research.research.phase4 import (
+    _artifact_records,
     evaluate_validation_gate,
     performance_statistics,
 )
@@ -15,6 +16,15 @@ def _config():
     return load_opening_value_strategy_config(
         PROJECT_ROOT / "config/opening_value_strategy.yaml"
     )
+
+
+def test_artifact_records_excludes_manifest_itself(tmp_path: Path) -> None:
+    (tmp_path / "result.csv").write_text("value\n1\n", encoding="utf-8")
+    (tmp_path / "run_manifest.json").write_text("{}", encoding="utf-8")
+
+    records = _artifact_records(tmp_path)
+
+    assert [record["path"] for record in records] == ["result.csv"]
 
 
 def _trade_rows(*, role: str, session: str, count: int, r_value: float) -> list[dict]:
