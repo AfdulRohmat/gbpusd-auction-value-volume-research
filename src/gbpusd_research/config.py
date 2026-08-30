@@ -383,6 +383,65 @@ class OpeningAblationConfig(StrictModel):
     analysis: OpeningAblationAnalysisConfig
 
 
+OpeningAuctionExitVariant = Literal[
+    "fixed_2r",
+    "session_hold",
+    "trailing_session",
+]
+
+
+class OpeningAuctionClassificationConfig(StrictModel):
+    observation_minutes: int = Field(gt=0)
+    imbalance_efficiency_threshold: float = Field(gt=0, le=1)
+    extreme_close_fraction: float = Field(gt=0.5, lt=1)
+
+    @model_validator(mode="after")
+    def validate_observation_window(self) -> OpeningAuctionClassificationConfig:
+        if self.observation_minutes % 5:
+            raise ValueError("observation_minutes must be M5-aligned")
+        return self
+
+
+class OpeningAuctionExecutionConfig(StrictModel):
+    stop_buffer_pips: float = Field(gt=0)
+    target_r_multiple: float = Field(gt=0)
+    slippage_per_side_pips: float = Field(ge=0)
+    intrabar_priority: Literal["stop_first"]
+    london_cutoff: Literal["new_york_open"]
+    new_york_cutoff: Literal["fx_day_boundary"]
+
+
+class OpeningAuctionTrailingConfig(StrictModel):
+    break_even_trigger_r: float = Field(gt=0)
+    swing_bars: int = Field(ge=1)
+    buffer_pips: float = Field(ge=0)
+
+
+class OpeningAuctionAnalysisConfig(StrictModel):
+    variants: tuple[OpeningAuctionExitVariant, ...]
+    bootstrap_resamples: int = Field(ge=100)
+    confidence_level: float = Field(gt=0, lt=1)
+    minimum_events_for_interpretation: int = Field(ge=2)
+    benchmark_expectancy_r: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_variants(self) -> OpeningAuctionAnalysisConfig:
+        required = {"fixed_2r", "session_hold", "trailing_session"}
+        if set(self.variants) != required or len(self.variants) != len(required):
+            raise ValueError(
+                "Phase-6 variants must contain fixed_2r, session_hold, and "
+                "trailing_session exactly once"
+            )
+        return self
+
+
+class OpeningAuctionConfig(StrictModel):
+    classification: OpeningAuctionClassificationConfig
+    execution: OpeningAuctionExecutionConfig
+    trailing: OpeningAuctionTrailingConfig
+    analysis: OpeningAuctionAnalysisConfig
+
+
 def _read_yaml(path: Path) -> object:
     try:
         with path.open(encoding="utf-8") as stream:
@@ -440,3 +499,9 @@ def load_opening_ablation_config(path: Path) -> OpeningAblationConfig:
     """Load and strictly validate the Phase-5 ablation configuration."""
 
     return OpeningAblationConfig.model_validate(_read_yaml(path))
+
+
+def load_opening_auction_config(path: Path) -> OpeningAuctionConfig:
+    """Load and strictly validate the Phase-6 state-machine configuration."""
+
+    return OpeningAuctionConfig.model_validate(_read_yaml(path))

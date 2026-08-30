@@ -8,6 +8,7 @@ from gbpusd_research.config import (
     load_fundamental_bias_config,
     load_fundamental_repricing_config,
     load_fundamental_strength_config,
+    load_opening_auction_config,
     load_project_config,
     load_value_state_config,
 )
@@ -78,6 +79,22 @@ def test_two_year_configuration_has_exclusive_2025_end() -> None:
     assert config.research.data.start.isoformat() == "2023-01-01"
     assert config.research.data.end.isoformat() == "2025-01-01"
     assert (config.research.data.end - config.research.data.start).days == 731
+
+
+def test_checked_in_opening_auction_configuration_is_valid() -> None:
+    config = load_opening_auction_config(
+        PROJECT_ROOT / "config/opening_auction_state_machine.yaml"
+    )
+
+    assert config.classification.observation_minutes == 15
+    assert config.classification.imbalance_efficiency_threshold == 0.60
+    assert config.execution.target_r_multiple == 2.0
+    assert config.trailing.swing_bars == 3
+    assert set(config.analysis.variants) == {
+        "fixed_2r",
+        "session_hold",
+        "trailing_session",
+    }
 
 
 def test_research_config_rejects_unknown_keys() -> None:
